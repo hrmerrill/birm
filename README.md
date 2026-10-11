@@ -15,7 +15,7 @@ None of the below is true yet.
 
 TODO
 
-## Example
+## Preparing data
 
 The `Panel` is the model-ready dataset used by `birm` to align loads, metrics and exogenous
 predictors. Build a `Panel` from a single long-form table:
@@ -40,6 +40,29 @@ panel.densest()  # 'hrv' has the most observations
 See the [docs](https://hrmerrill.github.io/birm/examples/) for more ways to build the `Panel` from
 your data.
 
+## Specifying a model
+
+An `IRModel` is the declarative spec of the shared-stock impulse-response model. You define it by
+picking a `fitness` × `fatigue` core and attach one `Metric` per response series, then fit it with
+`.fit(panel)`.
+
+```python
+from birm import IRModel, Load, Metric
+
+model = IRModel(
+    load=Load("w"),  # training-load driver w_t
+    fitness="banister",
+    fatigue="banister",  # selects the impulse-response core R_t
+    metrics=(
+        Metric("hrv", exog=("w",), ar1=True),  # HRV-suppression beta + slow drift u
+        Metric("speed", exog=("temp", "indoor")),  # heat + treadmill adjustments
+    ),
+)
+idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
+```
+
+See the [docs](https://hrmerrill.github.io/birm/examples/) for the full model reference.
+
 ## For Developers
 
 ### Setup
@@ -56,7 +79,7 @@ accompanying unit tests in `tests/` and documentation in `docs/`.
 ```bash
 git checkout -b feat/my-feature   # or fix/, docs/, refactor/, etc.
 
-# ... make changes ...
+# ...you make your changes, and then
 
 make format      # auto-fix formatting and lint violations
 make check       # lint, type-check, and verify docstring coverage
