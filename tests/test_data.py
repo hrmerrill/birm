@@ -7,20 +7,20 @@ from birm.data import Panel
 
 
 def _long() -> pd.DataFrame:
-    """Return a small long-form table with hrv + mmgap metrics and ragged dates.
+    """Return a small long-form table with hrv + speed metrics and ragged dates.
 
     Returns
     -------
     pd.DataFrame
         Long table covering load ``w``, daily-ish ``hrv`` (with ``trimp`` exog), and sparse
-        ``mmgap`` (with ``temp``/``indoor`` exog).
+        ``speed`` (with ``temp``/``indoor`` exog).
     """
     rows = [
         ("2025-01-03", "w", 210.0, np.nan, np.nan, np.nan),
         ("2025-01-03", "hrv", 64.0, np.nan, np.nan, 210.0),
         ("2025-01-04", "hrv", 61.0, np.nan, np.nan, 185.0),
         ("2025-01-05", "w", 150.0, np.nan, np.nan, np.nan),
-        ("2025-01-06", "mmgap", 4.71, 27.5, 1.0, np.nan),
+        ("2025-01-06", "speed", 4.71, 27.5, 1.0, np.nan),
     ]
     return pd.DataFrame(rows, columns=["date", "metric", "value", "temp", "indoor", "trimp"])
 
@@ -37,8 +37,8 @@ def _sheets() -> dict[str, pd.DataFrame]:
     hrv = pd.DataFrame(
         {"date": ["2025-01-03", "2025-01-04"], "hrv": [64.0, 61.0], "trimp": [210.0, 185.0]}
     )
-    mmgap = pd.DataFrame({"date": ["2025-01-06"], "mmgap": [4.71], "temp": [27.5], "indoor": [1.0]})
-    return {"w": w, "hrv": hrv, "mmgap": mmgap}
+    speed = pd.DataFrame({"date": ["2025-01-06"], "speed": [4.71], "temp": [27.5], "indoor": [1.0]})
+    return {"w": w, "hrv": hrv, "speed": speed}
 
 
 def test_from_long_structure():
@@ -49,13 +49,13 @@ def test_from_long_structure():
         metric="metric",
         value="value",
         load="w",
-        exog={"mmgap": ["temp", "indoor"], "hrv": ["trimp"]},
+        exog={"speed": ["temp", "indoor"], "hrv": ["trimp"]},
     )
     assert panel.T == 4  # 2025-01-03 .. 2025-01-06
     assert panel.load.tolist() == [210.0, 0.0, 150.0, 0.0]  # missing day = rest
     assert panel.metrics["hrv"].idx.tolist() == [0, 1]
-    assert panel.metrics["mmgap"].idx.tolist() == [3]
-    assert panel.metrics["mmgap"].exog["temp"].tolist() == [27.5]
+    assert panel.metrics["speed"].idx.tolist() == [3]
+    assert panel.metrics["speed"].exog["temp"].tolist() == [27.5]
     assert panel.densest() == "hrv"
 
 
@@ -67,13 +67,13 @@ def test_long_and_sheets_agree():
         metric="metric",
         value="value",
         load="w",
-        exog={"mmgap": ["temp", "indoor"], "hrv": ["trimp"]},
+        exog={"speed": ["temp", "indoor"], "hrv": ["trimp"]},
     )
     b = Panel.from_sheets(
         _sheets(),
         date="date",
         load="w",
-        exog={"mmgap": ["temp", "indoor"], "hrv": ["trimp"]},
+        exog={"speed": ["temp", "indoor"], "hrv": ["trimp"]},
     )
     assert a.grid.equals(b.grid)
     assert a.load.tolist() == b.load.tolist()
