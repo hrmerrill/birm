@@ -34,7 +34,7 @@ class Panel:
     Parameters
     ----------
     grid : pd.DatetimeIndex
-        Contiguous daily grid spanning ``min..max`` over all sources.
+        Contiguous daily grid spanning ``min`` to ``max`` over all sources.
     load : np.ndarray
         Training load :math:`w_t`, dense length ``T`` (an unlisted day is ``0.0`` = rest).
     metrics : dict[str, MetricData]

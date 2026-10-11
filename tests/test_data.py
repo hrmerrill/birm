@@ -51,7 +51,7 @@ def test_from_long_structure():
         load="w",
         exog={"speed": ["temp", "indoor"], "hrv": ["trimp"]},
     )
-    assert panel.T == 4  # 2025-01-03 .. 2025-01-06
+    assert panel.T == 4  # 2025-01-03 to 2025-01-06
     assert panel.load.tolist() == [210.0, 0.0, 150.0, 0.0]  # missing day = rest
     assert panel.metrics["hrv"].idx.tolist() == [0, 1]
     assert panel.metrics["speed"].idx.tolist() == [3]
