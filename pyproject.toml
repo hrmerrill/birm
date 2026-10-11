@@ -1,0 +1,93 @@
+[project]
+name = "birm"
+version = "0.0.0"
+description = "Bayesian Impulse-Response Modeling"
+readme = "README.md"
+license = { text = "Apache 2.0" }
+requires-python = ">=3.14"
+dependencies = [
+    "pymc>=6.3.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/hrmerrill/birm"
+Documentation = "https://hrmerrill.github.io/birm"
+
+[build-system]
+requires = ["uv_build>=0.11.14,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "genbadge[coverage]>=1.1",
+    "bump-my-version>=1.5.1",
+    "interrogate>=1.7.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+    "ty>=0.0.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "D", "UP", "B", "SIM"]
+ignore = [
+    "D100",  # covered by interrogate
+    "D104",  # ignore empty files
+    "N803",  # ML convention: uppercase X for feature matrices
+    "N806",  # ML convention: uppercase X_tr, X_va, X_te
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-magic = true
+ignore-module = true
+fail-under = 80
+exclude = ["tests"]
+color = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --cov=birm --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+source = ["birm"]
+
+[tool.coverage.report]
+show_missing = true
+
+# ---------------------------------------------------------------------------
+# bump-my-version
+# ---------------------------------------------------------------------------
+
+[tool.bumpversion]
+current_version = "0.0.0"
+commit = true
+tag = true
+message = "chore: bump version {current_version} → {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "src/birm/__init__.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "VERSION"
