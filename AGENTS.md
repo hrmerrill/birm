@@ -5,7 +5,8 @@ training and performance. Under construction.
 
 ## Development workflow
 
-Package manager is `uv`. All commands run via `uv run <tool>`.
+Refer to the [README](README.md#for-developers) for dev conventions. Package manager is `uv`.
+All commands run via `uv run <tool>`.
 
 | Task | Command |
 |---|---|

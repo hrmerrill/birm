@@ -29,7 +29,8 @@ uv sync  # install package + dev dependencies into .venv
 
 ### Development workflow
 
-All changes should be made on a branch and merged to `main` via pull request.
+All changes should be made on a branch and merged to `main` via pull request. All changes require
+accompanying unit tests in `tests/` and documentation in `docs/`.
 
 ```bash
 git checkout -b feat/my-feature   # or fix/, docs/, refactor/, etc.
@@ -64,9 +65,9 @@ CI runs `make check` and `make test` automatically on every push and pull reques
 1. Bump the version in `pyproject.toml`:
    ```bash
    # choose one:
-   make patch   # 0.1.0 → 0.1.1  (bug fixes)
-   make minor   # 0.1.0 → 0.2.0  (new features)
-   make major   # 0.1.0 → 1.0.0  (breaking changes)
+   make bump-patch   # 0.1.0 → 0.1.1  (bug fixes)
+   make bump-minor   # 0.1.0 → 0.2.0  (new features)
+   make bump-major   # 0.1.0 → 1.0.0  (breaking changes)
    ```
 2. Commit, tag, and push:
    ```bash
