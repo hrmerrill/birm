@@ -27,7 +27,7 @@ from birm import Panel
 df = pd.DataFrame(
     {
         "date": ["2025-01-03", "2025-01-03", "2025-01-04", "2025-01-06"],
-        "metric": ["w", "hrv", "hrv", "mmgap"],
+        "metric": ["w", "hrv", "hrv", "speed"],
         "value": [210.0, 64.0, 61.0, 4.71],
     }
 )
