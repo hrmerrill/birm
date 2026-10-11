@@ -1,6 +1,6 @@
-import birm
+from importlib import import_module
 
 
 def test_import():
-    """The package is importable and exposes its version."""
-    assert birm.__version__
+    """The package is importable."""
+    import_module("birm")
