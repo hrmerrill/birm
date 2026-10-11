@@ -1,5 +1,5 @@
-from birm.data import ChannelData, Panel
+from birm.data import MetricData, Panel
 
 __version__ = "0.0.0"
 
-__all__ = ["ChannelData", "Panel"]
+__all__ = ["MetricData", "Panel"]
