@@ -2,7 +2,7 @@ site_name: birm
 theme:
   name: material
 # hooks:
-#  - hooks.py
+#  - docs/hooks.py
 plugins:
   - search
   - mkdocstrings:
