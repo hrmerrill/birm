@@ -130,6 +130,7 @@ name = "birm"
 version = "0.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "pandas" },
     { name = "pymc" },
 ]
 
@@ -147,7 +148,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pymc", specifier = ">=6.3.2" }]
+requires-dist = [
+    { name = "pandas", specifier = ">=2.0" },
+    { name = "pymc", specifier = ">=6.3.2" },
+]
 
 [package.metadata.requires-dev]
 dev = [
