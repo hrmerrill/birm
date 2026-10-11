@@ -1,4 +1,4 @@
-.PHONY: format check test docs docs-serve build publish patch minor major
+.PHONY: format check test docs docs-serve build publish bump-patch bump-minor bump-major
 
 format:
 	uv run ruff format .
@@ -24,11 +24,11 @@ build:
 publish: test build
 	uv publish --trusted-publishing always
 
-patch:
-	uv version --bump patch
+bump-patch:  ## Bump patch version (e.g. 0.1.0 → 0.1.1)
+	uv run bump-my-version bump patch
 
-minor:
-	uv version --bump minor
+bump-minor:  ## Bump minor version (e.g. 0.1.0 → 0.2.0)
+	uv run bump-my-version bump minor
 
-major:
-	uv version --bump major
+bump-major:  ## Bump major version (e.g. 0.1.0 → 1.0.0)
+	uv run bump-my-version bump major
