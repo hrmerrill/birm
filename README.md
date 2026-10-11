@@ -17,7 +17,28 @@ TODO
 
 ## Example
 
-TODO
+The `Panel` is the model-ready dataset used by `birm` to align loads, metrics and exogenous
+predictors. Build a `Panel` from a single long-form table:
+
+```python
+import pandas as pd
+from birm import Panel
+
+df = pd.DataFrame(
+    {
+        "date": ["2025-01-03", "2025-01-03", "2025-01-04", "2025-01-06"],
+        "metric": ["w", "hrv", "hrv", "mmgap"],
+        "value": [210.0, 64.0, 61.0, 4.71],
+    }
+)
+
+panel = Panel.from_long(df, date="date", metric="metric", value="value", load="w").standardize()
+panel.T  # 4 days on the shared daily grid
+panel.densest()  # 'hrv' has the most observations
+```
+
+See the [docs](https://hrmerrill.github.io/birm/examples/) for more ways to build the `Panel` from
+your data.
 
 ## For Developers
 
