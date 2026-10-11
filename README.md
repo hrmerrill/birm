@@ -7,8 +7,8 @@ None of the below is true yet.
 <p align="center">
   <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=111111&label=pypi" alt="pypi">
   <img src="https://github.com/hrmerrill/birm/actions/workflows/ci.yml/badge.svg?style=flat-square" alt="CI">
-  <img src="https://raw.githubusercontent.com/hrmerrill/birm/main/.github/badges/coverage.svg" alt="coverage">
-  <img src="https://raw.githubusercontent.com/hrmerrill/birm/main/.github/badges/interrogate_badge.svg" alt="docstring coverage">
+  <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/coverage.svg" alt="coverage">
+  <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/interrogate_badge.svg" alt="docstring coverage">
 </p>
 
 ## About
