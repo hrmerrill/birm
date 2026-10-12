@@ -1,0 +1,109 @@
+r"""Fitness stock :math:`f_t`: ``banister`` | ``ceddia_periodize`` | ``ceddia_taper`` | ``ceddia``.
+
+Each variant turns the training-load drive :math:`w_t` into the fitness component of the latent
+impulse-response stock on the shared daily grid. All the nonlinearity lives in the fitness-gain
+function :math:`M_F(w_s, g_s)` (Ceddia 2026): the plain Banister null is :math:`M_F = k_F w_s`,
+and the Ceddia variants divide it by a **periodization** factor :math:`1 + k_p g_s` (gain fades as
+fatigue accumulates), a **taper** factor :math:`1 + k_a w_s` (diminishing returns within a single
+session), or both. Setting ``k_p = k_a = 0`` recovers the Banister linear model exactly.
+"""
+
+from __future__ import annotations
+
+import warnings
+from typing import Any
+
+import pytensor.tensor as pt
+
+from birm.core.stock import _ar1
+
+FITNESS = ("banister", "ceddia_periodize", "ceddia_taper", "ceddia")
+_NEEDS_FATIGUE = ("ceddia_periodize", "ceddia")
+
+
+def fitness_stock(
+    drive: Any,
+    k_F: Any,
+    tau_F: Any,
+    *,
+    variant: str = "banister",
+    g: Any = None,
+    k_p: Any = 0.0,
+    k_a: Any = 0.0,
+) -> pt.TensorVariable:
+    r"""Build the fitness stock :math:`f_t` for the chosen variant.
+
+    The gain :math:`M_F(w_s, g_s)` per variant is
+
+    - ``banister`` — :math:`k_F w_s`.
+    - ``ceddia_periodize`` — :math:`k_F w_s / (1 + k_p g_s)` (periodization via fatigue feedback).
+    - ``ceddia_taper`` — :math:`k_F w_s / (1 + k_a w_s)` (tapering via diminishing returns).
+    - ``ceddia`` — :math:`k_F w_s / \big((1 + k_p g_s)(1 + k_a w_s)\big)` (both).
+
+    and :math:`f_t = \sum_{s<t} M_F(w_s, g_s) e^{-(t-s)/\tau_F}`. For the periodization factor the
+    **lagged** fatigue stock :math:`g_{s-1}` is used (``g`` shifted one day, with ``0`` prepended),
+    so today's own load cannot instantly gate itself. When a periodization variant is paired with
+    ``g=None`` (i.e. a ``none`` fatigue model) there is no fatigue to feed back, so the
+    periodization factor is dropped and the variant degenerates to the taper/Banister form; a
+    :class:`UserWarning` is emitted because the requested spec is effectively overridden.
+
+    Parameters
+    ----------
+    drive : Any
+        Training-load drive :math:`w_t` on the daily grid, length ``T`` (array-like or tensor).
+    k_F : Any
+        Fitness gain :math:`k_F`, a float or scalar tensor.
+    tau_F : Any
+        Fitness decay time constant :math:`\tau_F` in days, a float or scalar tensor.
+    variant : str
+        One of ``banister``, ``ceddia_periodize``, ``ceddia_taper``, ``ceddia``.
+    g : Any, optional
+        Fatigue stock :math:`g_t`, length ``T``; required for ``ceddia_periodize`` and ``ceddia``.
+        Passing ``None`` (a ``none`` fatigue model) drops the periodization factor and warns.
+    k_p : Any
+        Periodization strength :math:`k_p` (``>= 0``); ``0`` recovers no periodization.
+    k_a : Any
+        Taper strength :math:`k_a` (``>= 0``); ``0`` recovers no tapering.
+
+    Returns
+    -------
+    pytensor.tensor.TensorVariable
+        The fitness stock :math:`f_t`, length ``T``.
+
+    Raises
+    ------
+    ValueError
+        If ``variant`` is unrecognized.
+
+    Warns
+    -----
+    UserWarning
+        If ``variant`` needs fatigue feedback but ``g`` is ``None``, the periodization factor is
+        silently dropped and the spec is effectively overridden.
+    """
+    if variant not in FITNESS:
+        raise ValueError(f"fitness variant must be one of {FITNESS}, got {variant!r}")
+
+    drive = pt.as_tensor_variable(drive)
+    forcing = k_F * drive
+
+    if variant in _NEEDS_FATIGUE:
+        if g is None:
+            warnings.warn(
+                f"fitness={variant!r} needs a fatigue stock for its periodization feedback, but "
+                "the fatigue model is 'none' (g=None). Dropping the periodization factor: this "
+                f"fitness core reduces to "
+                f"{'ceddia_taper' if variant == 'ceddia' else 'banister'}. Pair a non-'none' "
+                "fatigue model to keep periodization.",
+                UserWarning,
+                stacklevel=2,
+            )
+        else:
+            g = pt.as_tensor_variable(g)
+            g_lag = pt.concatenate([pt.zeros(1), g[:-1]])  # yesterday's fatigue (causal feedback)
+            forcing = forcing / (1.0 + k_p * g_lag)
+
+    if variant in ("ceddia_taper", "ceddia"):
+        forcing = forcing / (1.0 + k_a * drive)
+
+    return _ar1(pt.exp(-1.0 / tau_F), forcing)
