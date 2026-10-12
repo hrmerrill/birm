@@ -13,7 +13,7 @@ from typing import Any
 
 import pytensor.tensor as pt
 
-from birm.core.stock import _ar1
+from birm.core.integrator import _ar1
 
 FATIGUE = ("banister", "busso", "none")
 
