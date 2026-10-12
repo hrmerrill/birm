@@ -15,7 +15,7 @@ from typing import Any
 
 import pytensor.tensor as pt
 
-from birm.core.stock import _ar1
+from birm.core.integrator import _ar1
 
 FITNESS = ("banister", "ceddia_periodize", "ceddia_taper", "ceddia")
 _NEEDS_FATIGUE = ("ceddia_periodize", "ceddia")
