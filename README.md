@@ -1,7 +1,7 @@
 # `birm`: Bayesian Impulse-Response Modeling
 
 <p align="center">
-    <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=1a5&label=pypi" alt="pypi">
+  <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=1a5&label=pypi" alt="pypi">
   <img src="https://github.com/hrmerrill/birm/actions/workflows/ci.yml/badge.svg?style=flat-square" alt="CI">
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/coverage.svg" alt="coverage">
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/interrogate_badge.svg" alt="docstring coverage">
