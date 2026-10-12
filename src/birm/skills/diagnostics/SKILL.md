@@ -21,8 +21,8 @@ from birm import IRModel, Load, Metric
 
 spec = IRModel(
     load=Load("trimp"),
-    fitness="banister",          # banister | ceddia_periodize | ceddia_taper | ceddia
-    fatigue="banister",          # banister | busso | none
+    fitness="banister",  # banister | ceddia_periodize | ceddia_taper | ceddia
+    fatigue="banister",  # banister | busso | none
     metrics=(Metric("hrv", ar1=True), Metric("vo2max", link="log")),
 )
 idata = spec.fit(panel, sampler={"draws": 1000, "tune": 2500, "chains": 4, "seed": 0})
@@ -127,7 +127,7 @@ demote this cell by LOO/convergence rather than trusting either parameter.
 With multiple metrics, compare cells by PSIS-LOO **per metric** and watch Pareto-k:
 
 ```python
-az.loo(idata, var_name="hrv")      # one log_likelihood group per Metric
+az.loo(idata, var_name="hrv")  # one log_likelihood group per Metric
 az.loo(idata, var_name="vo2max")
 ```
 
