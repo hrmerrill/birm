@@ -54,7 +54,7 @@ def method(self, param: float) -> MetricResult:
     """
 ```
 
-Class-level parameters belong in the class docstring `Parameters` section (not `__init__`, which is ignored by interrogate via `ignore-init-method = true`).
+Class-level parameters belong in the class docstring `Parameters` section (not `__init__`, which is ignored by interrogate via `ignore-init-method = true`). Docs use `mkdocstrings`, not `sphinx` (`:math:` -> `$...$`, etc.)
 
 ## Testing conventions
 
