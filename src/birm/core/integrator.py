@@ -50,10 +50,10 @@ def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
         return c * x_prev + f_t
 
     forcing = pt.as_tensor_variable(forcing)
-    out, _ = pytensor.scan(
+    return pytensor.scan(
         step,
         sequences=[forcing],
         outputs_info=[pt.constant(float(x_init)).astype(forcing.dtype)],
         non_sequences=[coef],
+        return_updates=False,
     )
-    return out

@@ -1,11 +1,7 @@
 # `birm`: Bayesian Impulse-Response Modeling
 
-# UNDER CONSTRUCTION
-
-None of the below is true yet.
-
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=111111&label=pypi" alt="pypi">
+    <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=1a5&label=pypi" alt="pypi">
   <img src="https://github.com/hrmerrill/birm/actions/workflows/ci.yml/badge.svg?style=flat-square" alt="CI">
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/coverage.svg" alt="coverage">
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/interrogate_badge.svg" alt="docstring coverage">
@@ -16,7 +12,8 @@ None of the below is true yet.
 This package implements a **B**ayesian **I**mpulse-**R**esponse **M**odel (BIRM) for athletic
 performance. The default prior structure is physiologically informed and resolves
 inference issues common in the literature, and the model allows for multivariate inputs and
-outputs so that parameters can be informed by multiple metrics of performance.
+outputs so that parameters can be informed by multiple metrics of performance adjusted for
+their external influencers.
 
 ## Preparing data
 
@@ -64,7 +61,7 @@ model = IRModel(
 idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 ```
 
-TODO: what to do with idata.
+(TODO: Examples of what to do with `idata`.)
 
 See the [docs](https://hrmerrill.github.io/birm/examples/) for the full model reference.
 

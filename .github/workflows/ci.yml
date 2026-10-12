@@ -21,7 +21,7 @@ jobs:
         run: |
           uv run genbadge coverage -i coverage.xml -o coverage.svg
           uv run interrogate --generate-badge interrogate_badge.svg src/
-          # ponytail: force-push an orphan "badges" branch so protected main stays untouched
+          # force-push an orphan "badges" branch so protected main stays untouched
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout --orphan badges

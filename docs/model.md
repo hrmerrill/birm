@@ -101,9 +101,9 @@ $\tau_F > \tau_G + 1$. BIRM therefore uses the following parameterization and pr
 
 $$k_G = (\theta + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
 
-$$\theta \sim \text{HalfNormal}(0, \sigma_\theta^2),$$
+$$\theta \sim \text{LogNormal}(\mu_\theta, \sigma_\theta^2),$$
 
-$$\lambda_F \sim \text{HalfNormal}(0, \sigma_{\lambda_F}^2)$$
+$$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
 
 which produce posterior estimates which satisfy the constraints $k_G/k_F > 1$ and
 $\tau_F > \tau_G + 1$ with certainty. Note that $k_G/k_F > 1$ and the (approximately) implied
@@ -144,7 +144,6 @@ The original Banister 1975 IR model is defined by
 
 $$R^{(O)}_t = k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_G}$$
 
-
 [Busso 2003](https://www.ovid.com/jnls/acsm-msse/abstract/10.1249/01.mss.0000074465.13621.37)
 modified the fatigue gain to vary over time by responding to training load:
 
@@ -155,7 +154,7 @@ $$k_G(t)\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}.$$
 The nonlinear fatigue gain accumulates with more recent training on timescales that are expected to be
 smaller than fitness and fatigue level. We therefore impose the physiological constraint
 $\tau_F > \tau_G > \tau_v$ with the reparameterization $\tau_G = \tau_v + \lambda_G$ and 
-$\tau_F = 1 + \tau_G + \lambda_F$ with half-normal priors on $\lambda_G$ and $\lambda_F$.
+$\tau_F = 1 + \tau_G + \lambda_F$ with log-normal priors on $\lambda_G$ and $\lambda_F$.
 
 [Ceddia 2026](https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html) studied
 the optimal training routines implied by Banister and Busso's models and devised their own
