@@ -1,29 +1,21 @@
-r"""Ceddia (2026) admissibility quantity for the latent stock -- recorded, never enforced.
+r"""Ceddia (2026) admissibility quantity for the latent stock.
 
 Ceddia 2026 derive an admissibility condition implied by bounded infinite-horizon optimal training
-policies (finite human performance): a unit load impulse must leave a net *gain* rather than a net
-cost. In the notation of ``docs/model.md`` this is
+policies: a unit load impulse must leave a net *gain* rather than a net cost:
 
 .. math::
 
     k_G \left(1 + \frac{1}{e^{1/\tau_G} - 1}\right) - \frac{k_F}{e^{1/\tau_F} - 1} > 0 ,
 
-equivalently a floor on the gain ratio,
+equivalently on the gain ratio,
 
 .. math::
 
     \frac{k_G}{k_F} > \frac{1 - e^{-1/\tau_G}}{e^{1/\tau_F} - 1} \equiv a_c .
 
-BIRM does **not** impose :math:`k_G/k_F > a_c`: that stricter floor can bias estimates for athletes
-who have not yet reached peak performance. The reparameterization enforces the weaker
-:math:`k_G/k_F > 1` (and, via :math:`\tau_F > \tau_G + 1`, the approximate :math:`a_c > 1`), while
-the admissibility *margin* here is recorded as a deterministic so ``P(margin > 0)`` can be read off
-the posterior as a diagnostic -- exactly as in the R&D ``banister.py`` head.
-
-Both helpers use ``numpy.exp``, which dispatches on PyTensor variables (returning a tensor for the
-in-graph deterministic) and on plain floats/arrays (returning a float/array for diagnostics on
-posterior draws), so the same function serves both callers. The time constants must satisfy
-:math:`\tau_F > \tau_G` as the reparameterization guarantees.
+The reparameterization enforces the weaker :math:`k_G/k_F > 1` (and, via
+:math:`\tau_F > \tau_G + 1`, the approximate :math:`a_c > 1`), while the admissibility margin here
+is recorded so ``P(margin > 0)`` can be read off the posterior as a diagnostic.
 """
 
 from __future__ import annotations
