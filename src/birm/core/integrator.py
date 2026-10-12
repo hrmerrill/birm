@@ -1,4 +1,4 @@
-r"""Shared leaky-integrator :func:`_ar1` reused by fitness, fatigue, and the Busso gain."""
+r"""Shared leaky-integrator [_ar1][] reused by fitness, fatigue, and the Busso gain."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pytensor.tensor as pt
 
 
 def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
-    r"""Realise the leaky recursion :math:`x_t = \text{coef}\,x_{t-1} + \text{forcing}_t`.
+    r"""Realise the leaky recursion $x_t = \text{coef}\,x_{t-1} + \text{forcing}_t$.
 
     Uses an ``O(T)`` ``pytensor.scan`` rather than a dense ``O(T^2)`` geometric operator so the
     gradient stays cheap on long (multi-year) daily grids. ``coef`` is a scalar (a float or a
@@ -18,11 +18,11 @@ def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
     Parameters
     ----------
     coef : Any
-        Scalar decay coefficient :math:`e^{-1/\tau}`, a float or scalar tensor.
+        Scalar decay coefficient $e^{-1/\tau}$, a float or scalar tensor.
     forcing : Any
         Per-day forcing sequence, length ``T`` (array-like or tensor).
     x_init : float
-        Initial state :math:`x_{-1}` before the first step.
+        Initial state $x_{-1}$ before the first step.
 
     Returns
     -------

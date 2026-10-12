@@ -98,12 +98,12 @@ class Prior:
 
 @dataclass(frozen=True)
 class Load:
-    """The training-load driver :math:`w_t` of the latent stock shared across metrics.
+    """The training-load driver $w_t$ of the latent stock shared across metrics.
 
     Parameters
     ----------
     name : str
-        Series name identifying the load in the :class:`~birm.data.Panel`.
+        Series name identifying the load in the [Panel][birm.data.Panel].
     """
 
     name: str
@@ -111,23 +111,23 @@ class Load:
 
 @dataclass(frozen=True)
 class Metric:
-    r"""One response series :math:`Y^{(j)}` as a noisy readout of the shared stock.
+    r"""One response series $Y^{(j)}$ as a noisy readout of the shared stock.
 
     Parameters
     ----------
     name : str
-        Metric name; must match a key in :attr:`birm.data.Panel.metrics`.
+        Metric name; must match a key in `Panel.metrics`.
     link : str
-        Link function :math:`l^{(j)}`; one of ``identity``, ``log``, ``logit``.
+        Link function $l^{(j)}$; one of ``identity``, ``log``, ``logit``.
     exog : tuple[str, ...]
-        Exogenous predictor columns :math:`X^{(j)}` (``-> \beta``), read off this metric's rows.
+        Exogenous predictor columns $X^{(j)}$ (``-> \beta``), read off this metric's rows.
     ar1 : bool
-        Whether to include the orthogonalized lag-1 process :math:`u^{(j)}`.
+        Whether to include the orthogonalized lag-1 process $u^{(j)}$.
     intercept : bool
-        Whether to include the intercept :math:`\alpha^{(j)}`.
+        Whether to include the intercept $\alpha^{(j)}$.
     gamma : float, optional
-        Fixed scale :math:`\gamma^{(j)}`. If ``None`` the densest metric is auto-pinned to
-        :math:`\gamma \equiv 1` and the rest are estimated.
+        Fixed scale $\gamma^{(j)}$. If ``None`` the densest metric is auto-pinned to
+        $\gamma \equiv 1$ and the rest are estimated.
     """
 
     name: str
@@ -155,16 +155,16 @@ class Metric:
 class IRModel:
     r"""Declarative spec of the shared-stock multivariate impulse-response model.
 
-    Selects one impulse-response core :math:`R_t` via ``fitness`` :math:`\times` ``fatigue`` and
-    attaches one observation layer per :class:`Metric`. Call :meth:`fit` with a
-    :class:`~birm.data.Panel` to sample.
+    Selects one impulse-response core $R_t$ via ``fitness`` $\times$ ``fatigue`` and
+    attaches one observation layer per [Metric][birm.model.Metric]. Call
+    [fit][birm.model.IRModel.fit] with a [Panel][birm.data.Panel] to sample.
 
     Parameters
     ----------
     load : Load
-        The training-load driver :math:`w_t`.
+        The training-load driver $w_t$.
     fitness : str
-        Fitness core :math:`M_F`; one of ``banister``, ``ceddia_periodize``, ``ceddia_taper``,
+        Fitness core $M_F$; one of ``banister``, ``ceddia_periodize``, ``ceddia_taper``,
         ``ceddia``.
     fatigue : str
         Fatigue core; one of ``banister``, ``busso``, ``none``.
@@ -203,16 +203,18 @@ class IRModel:
         """Validate this spec against ``panel``, build the model, and sample the posterior.
 
         Checks that every spec metric exists in the panel with resolvable exog columns, warns on
-        unused panel metrics, assembles the PyMC model via :meth:`build_model`, then samples.
+        unused panel metrics, assembles the PyMC model via
+        [build_model][birm.model.IRModel.build_model], then samples.
 
         Parameters
         ----------
         panel : Panel
-            Observations to fit, with metric names matching this spec's :class:`Metric` names.
+            Observations to fit, with metric names matching this spec's
+            [Metric][birm.model.Metric] names.
         sampler : dict[str, Any], optional
-            Overrides merged over the R&D defaults (:data:`_SAMPLER_DEFAULTS`: nutpie NUTS,
+            Overrides merged over the R&D defaults (`_SAMPLER_DEFAULTS`: nutpie NUTS,
             ``draws=1000``, ``tune=2500``, ``chains=4``, ``target_accept=0.99``), passed through to
-            :func:`pymc.sample`.
+            `pymc.sample`.
 
         Returns
         -------
@@ -231,14 +233,15 @@ class IRModel:
     def build_model(self, panel: Panel) -> pm.Model:
         """Assemble the PyMC model binding this spec to ``panel``.
 
-        Validates the spec against the panel, builds the shared latent stock :math:`R_t` from the
+        Validates the spec against the panel, builds the shared latent stock $R_t$ from the
         selected cores, then attaches one observation layer and ``obs_<name>`` likelihood per
         metric.
 
         Parameters
         ----------
         panel : Panel
-            Observations to bind, with metric names matching this spec's :class:`Metric` names.
+            Observations to bind, with metric names matching this spec's
+            [Metric][birm.model.Metric] names.
 
         Returns
         -------
@@ -257,12 +260,12 @@ class IRModel:
         return model
 
     def _stock(self, drive: np.ndarray, scale: float) -> tuple[Any, Any]:
-        r"""Build the shared latent stock :math:`R_t` with reparameterized, admissible priors.
+        r"""Build the shared latent stock $R_t$ with reparameterized, admissible priors.
 
         Parameters
         ----------
         drive : np.ndarray
-            The daily training-load driver :math:`w_t` on the full grid.
+            The daily training-load driver $w_t$ on the full grid.
         scale : float
             Spread of the densest metric's response, used to scale the gain priors.
 
@@ -270,7 +273,7 @@ class IRModel:
         -------
         tuple[Any, Any]
             The ``R`` deterministic (fitness minus fatigue) on the full grid, and the AR(1)
-            orthogonalization design :math:`[\mathbf{1}, i_1, i_2]` built from the **gain-free**
+            orthogonalization design $[\mathbf{1}, i_1, i_2]$ built from the **gain-free**
             base integrals (so the residual cannot soak up either dose-response direction).
         """
         k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_F_FACTOR * scale)
@@ -333,17 +336,17 @@ class IRModel:
         Parameters
         ----------
         data : Any
-            The :class:`~birm.data.MetricData` for this metric (values, grid indices, exog).
+            The [MetricData][birm.data.MetricData] for this metric (values, grid indices, exog).
         metric : Metric
             The metric spec (link, exog, ar1, intercept, gamma).
         stock : Any
             The shared ``R`` deterministic on the full grid.
         ortho : Any
-            The AR(1) orthogonalization design :math:`[\mathbf{1}, i_1, i_2]` from :meth:`_stock`.
+            The AR(1) orthogonalization design $[\mathbf{1}, i_1, i_2]$ from [_stock][].
         grid_len : int
-            Number of grid timesteps :math:`T`.
+            Number of grid timesteps $T$.
         dense : str
-            Name of the densest metric, auto-pinned to :math:`\gamma \equiv 1`.
+            Name of the densest metric, auto-pinned to $\gamma \equiv 1$.
         """
         priors = self.priors
         values = data.values
@@ -392,10 +395,10 @@ class IRModel:
         pm.Normal(f"obs_{metric.name}", mu=mean, sigma=sigma, observed=values)
 
     def _ar1_residual(self, name: str, ortho: Any, grid_len: int, spread: float) -> Any:
-        r"""Build the orthogonalized AR(1) residual :math:`u^{(j)}` on the full grid.
+        r"""Build the orthogonalized AR(1) residual $u^{(j)}$ on the full grid.
 
-        The raw lag-1 process is swept against the base-integral design :math:`[\mathbf{1}, i_1,
-        i_2]` so it cannot re-absorb either dose-response direction, keeping the stock gains and
+        The raw lag-1 process is swept against the base-integral design $[\mathbf{1}, i_1,
+        i_2]$ so it cannot re-absorb either dose-response direction, keeping the stock gains and
         timescales identified.
 
         Parameters
@@ -403,9 +406,9 @@ class IRModel:
         name : str
             Metric name, used to namespace the ``phi_u_``/``sigma_u_``/``wU_``/``u_`` variables.
         ortho : Any
-            The orthogonalization design :math:`[\mathbf{1}, i_1, i_2]` from :meth:`_stock`.
+            The orthogonalization design $[\mathbf{1}, i_1, i_2]$ from [_stock][].
         grid_len : int
-            Number of grid timesteps :math:`T`.
+            Number of grid timesteps $T$.
         spread : float
             Spread of the metric's response, used to scale the innovation prior.
 

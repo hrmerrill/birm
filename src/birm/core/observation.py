@@ -1,18 +1,18 @@
 r"""Per-channel observation layer: the measurement map from the shared stock to one metric.
 
-Each response metric :math:`Y^{(j)}` is a noisy, transformed readout of the single shared latent
-stock :math:`R_t` (``docs/model.md``):
+Each response metric $Y^{(j)}$ is a noisy, transformed readout of the single shared latent
+stock $R_t$ (``docs/model.md``):
 
-.. math::
-
-    Y^{(j)}_t = \alpha^{(j)} + \gamma^{(j)} l^{(j)}(R_t) + X^{(j)}_t \beta^{(j)} + u^{(j)}_t
-                + \epsilon^{(j)}_t .
+$$
+Y^{(j)}_t = \alpha^{(j)} + \gamma^{(j)} l^{(j)}(R_t) + X^{(j)}_t \beta^{(j)} + u^{(j)}_t
+            + \epsilon^{(j)}_t .
+$$
 
 This module builds the deterministic part of that map -- everything except the white noise
-:math:`\epsilon` -- as a pure PyTensor graph, mirroring :mod:`birm.core.stock`: it consumes
+$\epsilon$ -- as a pure PyTensor graph, mirroring [birm.core.stock][]: it consumes
 already-resolved parameters (``alpha``, ``gamma``, ``beta``, and a prebuilt AR(1) latent ``u``) and
 never creates priors or the ``obs_<metric>`` likelihood. The surrounding ``build_model`` owns the
-``pm.*`` priors (:math:`\alpha, \gamma, \beta, \sigma`, and the AR(1) ``phi_u``/``sigma_u``) and the
+``pm.*`` priors ($\alpha, \gamma, \beta, \sigma$, and the AR(1) ``phi_u``/``sigma_u``) and the
 Normal likelihood, exactly as it owns the stock's gain/decay priors.
 """
 
@@ -32,14 +32,14 @@ LINKS: dict[str, tuple[Callable[[Any], Any], Callable[[Any], Any]]] = {
 
 
 def apply_link(x: Any, name: str = "identity") -> Any:
-    r"""Apply the forward link :math:`l^{(j)}` to the latent stock.
+    r"""Apply the forward link $l^{(j)}$ to the latent stock.
 
     Parameters
     ----------
     x : Any
-        Value to transform, typically the latent stock :math:`R_t` (float, array, or tensor).
+        Value to transform, typically the latent stock $R_t$ (float, array, or tensor).
     name : str
-        Link name; one of the keys of :data:`LINKS` (``identity``, ``log``, ``logit``).
+        Link name; one of the keys of [LINKS][] (``identity``, ``log``, ``logit``).
 
     Returns
     -------
@@ -57,14 +57,14 @@ def apply_link(x: Any, name: str = "identity") -> Any:
 
 
 def apply_inverse_link(x: Any, name: str = "identity") -> Any:
-    r"""Apply the inverse link :math:`{l^{(j)}}^{-1}` (the forecast back-transform).
+    r"""Apply the inverse link ${l^{(j)}}^{-1}$ (the forecast back-transform).
 
     Parameters
     ----------
     x : Any
         Value to back-transform (float, array, or tensor).
     name : str
-        Link name; one of the keys of :data:`LINKS` (``identity``, ``log``, ``logit``).
+        Link name; one of the keys of [LINKS][] (``identity``, ``log``, ``logit``).
 
     Returns
     -------
@@ -85,9 +85,9 @@ def apply_inverse_link(x: Any, name: str = "identity") -> Any:
 def orthogonalize(signal: Any, design: Any, ridge: float = 1e-6) -> pt.TensorVariable:
     r"""Project ``signal`` into the null space of the ``design`` columns.
 
-    Returns :math:`u - X (X^\top X + \text{ridge}\,I)^{-1} X^\top u`, the component of ``signal``
+    Returns $u - X (X^\top X + \text{ridge}\,I)^{-1} X^\top u$, the component of ``signal``
     orthogonal to every column of ``design`` (``X^T u = 0`` up to the ridge). Used to sweep the
-    AR(1) residual off the load-driven subspace :math:`\text{span}\{1, f, g, \dots\}` so it cannot
+    AR(1) residual off the load-driven subspace $\text{span}\{1, f, g, \dots\}$ so it cannot
     re-absorb fitness/fatigue variance the stock parameters should explain. The small ``ridge``
     keeps the near-collinear leaky-integrator normal equations well-posed.
 
@@ -122,36 +122,36 @@ def observation_mean(
     beta: Any = None,
     u: Any = None,
 ) -> Any:
-    r"""Assemble the deterministic channel mean :math:`\alpha + \gamma l(R) + X\beta + u`.
+    r"""Assemble the deterministic channel mean $\alpha + \gamma l(R) + X\beta + u$.
 
     Composes the measurement map for one metric on its own observed rows (every input is row-aligned
     to the metric's observations). Every term but the linked stock is optional: the intercept
     defaults to ``0``, the scale to ``1``, and the exogenous and AR(1) contributions are dropped
-    when their inputs are ``None``. The white noise :math:`\epsilon` is not added here -- it is the
+    when their inputs are ``None``. The white noise $\epsilon$ is not added here -- it is the
     likelihood scale owned by ``build_model``.
 
     Parameters
     ----------
     stock : Any
-        The latent stock :math:`R_t` evaluated on the metric's observed rows (array-like or tensor).
+        The latent stock $R_t$ evaluated on the metric's observed rows (array-like or tensor).
     link : str
-        Link :math:`l^{(j)}` applied to ``stock``; one of the keys of :data:`LINKS`.
+        Link $l^{(j)}$ applied to ``stock``; one of the keys of [LINKS][].
     alpha : Any
-        Intercept :math:`\alpha^{(j)}` (scalar). ``0`` drops the intercept.
+        Intercept $\alpha^{(j)}$ (scalar). ``0`` drops the intercept.
     gamma : Any
-        Scale :math:`\gamma^{(j)}` on the linked stock (scalar). Pinned to ``1`` on the densest
+        Scale $\gamma^{(j)}$ on the linked stock (scalar). Pinned to ``1`` on the densest
         metric by the model layer.
     exog : Any, optional
-        The ``(n_j, p)`` exogenous design :math:`X^{(j)}` on the metric's rows; ``None`` drops it.
+        The ``(n_j, p)`` exogenous design $X^{(j)}$ on the metric's rows; ``None`` drops it.
     beta : Any, optional
-        The length-``p`` coefficients :math:`\beta^{(j)}`; required when ``exog`` is given.
+        The length-``p`` coefficients $\beta^{(j)}$; required when ``exog`` is given.
     u : Any, optional
-        The orthogonalized AR(1) residual :math:`u^{(j)}` on the metric's rows; ``None`` drops it.
+        The orthogonalized AR(1) residual $u^{(j)}$ on the metric's rows; ``None`` drops it.
 
     Returns
     -------
     Any
-        The row-aligned channel mean (everything but the noise :math:`\epsilon`); numpy for numpy
+        The row-aligned channel mean (everything but the noise $\epsilon$); numpy for numpy
         inputs and a PyTensor variable when any input is symbolic.
 
     Raises

@@ -1,4 +1,4 @@
-"""Latent-stock cores: the fitness :math:`f_t` and fatigue :math:`g_t` building blocks."""
+"""Latent-stock cores: the fitness $f_t$ and fatigue $g_t$ building blocks."""
 
 from birm.core.admissibility import admissibility, admissibility_threshold
 from birm.core.fatigue import fatigue_stock

@@ -1,10 +1,10 @@
-r"""Fitness stock :math:`f_t`: ``banister`` | ``ceddia_periodize`` | ``ceddia_taper`` | ``ceddia``.
+r"""Fitness stock $f_t$: ``banister`` | ``ceddia_periodize`` | ``ceddia_taper`` | ``ceddia``.
 
-Each variant turns the training-load drive :math:`w_t` into the fitness component of the latent
+Each variant turns the training-load drive $w_t$ into the fitness component of the latent
 impulse-response stock on the shared daily grid. All the nonlinearity lives in the fitness-gain
-function :math:`M_F(w_s, g_s)` (Ceddia 2026): the plain Banister null is :math:`M_F = k_F w_s`,
-and the Ceddia variants divide it by a **periodization** factor :math:`1 + k_p g_s` (gain fades as
-fatigue accumulates), a **taper** factor :math:`1 + k_a w_s` (diminishing returns within a single
+function $M_F(w_s, g_s)$ (Ceddia 2026): the plain Banister null is $M_F = k_F w_s$,
+and the Ceddia variants divide it by a **periodization** factor $1 + k_p g_s$ (gain fades as
+fatigue accumulates), a **taper** factor $1 + k_a w_s$ (diminishing returns within a single
 session), or both. Setting ``k_p = k_a = 0`` recovers the Banister linear model exactly.
 """
 
@@ -31,44 +31,44 @@ def fitness_stock(
     k_p: Any = 0.0,
     k_a: Any = 0.0,
 ) -> pt.TensorVariable:
-    r"""Build the fitness stock :math:`f_t` for the chosen variant.
+    r"""Build the fitness stock $f_t$ for the chosen variant.
 
-    The gain :math:`M_F(w_s, g_s)` per variant is
+    The gain $M_F(w_s, g_s)$ per variant is
 
-    - ``banister`` — :math:`k_F w_s`.
-    - ``ceddia_periodize`` — :math:`k_F w_s / (1 + k_p g_s)` (periodization via fatigue feedback).
-    - ``ceddia_taper`` — :math:`k_F w_s / (1 + k_a w_s)` (tapering via diminishing returns).
-    - ``ceddia`` — :math:`k_F w_s / \big((1 + k_p g_s)(1 + k_a w_s)\big)` (both).
+    - ``banister`` — $k_F w_s$.
+    - ``ceddia_periodize`` — $k_F w_s / (1 + k_p g_s)$ (periodization via fatigue feedback).
+    - ``ceddia_taper`` — $k_F w_s / (1 + k_a w_s)$ (tapering via diminishing returns).
+    - ``ceddia`` — $k_F w_s / \big((1 + k_p g_s)(1 + k_a w_s)\big)$ (both).
 
-    and :math:`f_t = \sum_{s<t} M_F(w_s, g_s) e^{-(t-s)/\tau_F}`. For the periodization factor the
-    **lagged** fatigue stock :math:`g_{s-1}` is used (``g`` shifted one day, with ``0`` prepended),
+    and $f_t = \sum_{s<t} M_F(w_s, g_s) e^{-(t-s)/\tau_F}$. For the periodization factor the
+    **lagged** fatigue stock $g_{s-1}$ is used (``g`` shifted one day, with ``0`` prepended),
     so today's own load cannot instantly gate itself. When a periodization variant is paired with
     ``g=None`` (i.e. a ``none`` fatigue model) there is no fatigue to feed back, so the
     periodization factor is dropped and the variant degenerates to the taper/Banister form; a
-    :class:`UserWarning` is emitted because the requested spec is effectively overridden.
+    [UserWarning][] is emitted because the requested spec is effectively overridden.
 
     Parameters
     ----------
     drive : Any
-        Training-load drive :math:`w_t` on the daily grid, length ``T`` (array-like or tensor).
+        Training-load drive $w_t$ on the daily grid, length ``T`` (array-like or tensor).
     k_F : Any
-        Fitness gain :math:`k_F`, a float or scalar tensor.
+        Fitness gain $k_F$, a float or scalar tensor.
     tau_F : Any
-        Fitness decay time constant :math:`\tau_F` in days, a float or scalar tensor.
+        Fitness decay time constant $\tau_F$ in days, a float or scalar tensor.
     variant : str
         One of ``banister``, ``ceddia_periodize``, ``ceddia_taper``, ``ceddia``.
     g : Any, optional
-        Fatigue stock :math:`g_t`, length ``T``; required for ``ceddia_periodize`` and ``ceddia``.
+        Fatigue stock $g_t$, length ``T``; required for ``ceddia_periodize`` and ``ceddia``.
         Passing ``None`` (a ``none`` fatigue model) drops the periodization factor and warns.
     k_p : Any
-        Periodization strength :math:`k_p` (``>= 0``); ``0`` recovers no periodization.
+        Periodization strength $k_p$ (``>= 0``); ``0`` recovers no periodization.
     k_a : Any
-        Taper strength :math:`k_a` (``>= 0``); ``0`` recovers no tapering.
+        Taper strength $k_a$ (``>= 0``); ``0`` recovers no tapering.
 
     Returns
     -------
     pytensor.tensor.TensorVariable
-        The fitness stock :math:`f_t`, length ``T``.
+        The fitness stock $f_t$, length ``T``.
 
     Raises
     ------

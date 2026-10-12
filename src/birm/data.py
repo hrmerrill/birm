@@ -15,11 +15,11 @@ class MetricData:
     Parameters
     ----------
     values : np.ndarray
-        Observed values :math:`Y^{(j)}`, length ``n_j`` (NaNs dropped).
+        Observed values $Y^{(j)}$, length ``n_j`` (NaNs dropped).
     idx : np.ndarray
         Integer positions into the shared grid, length ``n_j``, strictly increasing.
     exog : dict[str, np.ndarray]
-        Exogenous columns :math:`X^{(j)}`, each length ``n_j`` and aligned 1:1 with ``values``.
+        Exogenous columns $X^{(j)}$, each length ``n_j`` and aligned 1:1 with ``values``.
     """
 
     values: np.ndarray
@@ -36,12 +36,12 @@ class Panel:
     grid : pd.DatetimeIndex
         Contiguous daily grid spanning ``min`` to ``max`` over all sources.
     load : np.ndarray
-        Training load :math:`w_t`, dense length ``T`` (an unlisted day is ``0.0`` = rest).
+        Training load $w_t$, dense length ``T`` (an unlisted day is ``0.0`` = rest).
     metrics : dict[str, MetricData]
         Response metrics, each with its own values, grid positions, and exog.
     scaling : dict[str, tuple[float, float]]
         ``(center, scale)`` per standardized series, for back-transform. Empty until
-        :meth:`standardize` is called.
+        [standardize][birm.data.Panel.standardize] is called.
     """
 
     grid: pd.DatetimeIndex
@@ -61,7 +61,7 @@ class Panel:
         return len(self.grid)
 
     def densest(self) -> str:
-        r"""Metric with the most observations (auto-pinned to :math:`\gamma \equiv 1`).
+        r"""Metric with the most observations (auto-pinned to $\gamma \equiv 1$).
 
         Returns
         -------
@@ -96,7 +96,7 @@ class Panel:
         value : str
             Name of the value column.
         load : str
-            Metric label that denotes the training load :math:`w_t`.
+            Metric label that denotes the training load $w_t$.
         exog : dict[str, list[str]], optional
             Per-metric exogenous column names, read off that metric's rows.
 
@@ -146,7 +146,7 @@ class Panel:
         date : str
             Name of the ISO-date column present in every sheet.
         load : str
-            Sheet name that denotes the training load :math:`w_t`.
+            Sheet name that denotes the training load $w_t$.
         exog : dict[str, list[str]], optional
             Per-metric exogenous columns, found within each metric's own sheet.
 
@@ -182,7 +182,7 @@ class Panel:
 
         Each response metric's values and exog columns are z-scored (center/scale stored in
         ``scaling`` for back-transform); load is rescaled by its own mean so gains stay
-        :math:`O(1)`.
+        $O(1)$.
 
         Returns
         -------
