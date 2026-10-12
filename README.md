@@ -13,7 +13,10 @@ None of the below is true yet.
 
 ## About
 
-TODO
+This package implements a **B**ayesian **I**mpulse-**R**esponse **M**odel (BIRM) for athletic
+performance. The default prior structure is physiologically informed and resolves
+inference issues common in the literature, and the model allows for multivariate inputs and
+outputs so that parameters can be informed by multiple metrics of performance.
 
 ## Preparing data
 
@@ -60,6 +63,8 @@ model = IRModel(
 )
 idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 ```
+
+TODO: what to do with idata.
 
 See the [docs](https://hrmerrill.github.io/birm/examples/) for the full model reference.
 

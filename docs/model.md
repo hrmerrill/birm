@@ -150,7 +150,12 @@ modified the fatigue gain to vary over time by responding to training load:
 
 $$R^{(V)}_t = k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - \sum_{s=0}^{t-1}k_G(s) w_s e^{-(t-s)/\tau_G},$$
 
-$$k_G(t)\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}$$
+$$k_G(t)\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}.$$
+
+The nonlinear fatigue gain accumulates with more recent training on timescales that are expected to be
+smaller than fitness and fatigue level. We therefore impose the physiological constraint
+$\tau_F > \tau_G > \tau_v$ with the reparameterization $\tau_G = \tau_v + \lambda_G$ and 
+$\tau_F = 1 + \tau_G + \lambda_F$ with half-normal priors on $\lambda_G$ and $\lambda_F$.
 
 [Ceddia 2026](https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html) studied
 the optimal training routines implied by Banister and Busso's models and devised their own
@@ -173,7 +178,7 @@ $$M_F(w_s, g_s) = \frac{k_F w_s}{1+k_a w_s}$$
 
 and both by 
 
-$$M_F(w_s, g_s) = \frac{k_F w_s}{(1 + k_p g_s)(1+k_a w_s)}$$
+$$M_F(w_s, g_s) = \frac{k_F w_s}{(1 + k_p g_s)(1+k_a w_s)}.$$
 
 ## Concrete example: HRV and speed
 
