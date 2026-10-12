@@ -14,6 +14,9 @@ dependencies = [
 Homepage = "https://github.com/hrmerrill/birm"
 Documentation = "https://hrmerrill.github.io/birm"
 
+[project.entry-points."agent_skills.skills"]
+bayesian_diagnostics = "birm.skills.diagnostics"
+
 [build-system]
 requires = ["uv_build>=0.11.14,<0.12.0"]
 build-backend = "uv_build"
