@@ -7,7 +7,7 @@ physiologically meaningful restricted priors.
 
 ## Background
 
-The Banister-style impulse-response model (and its many variants) provides insights into the
+The Banister impulse-response model (and its many variants) provides insights into the
 effects of training on performance through the inference of athetic performance's responses to a 
 training dose and the prediction of performance ability. It suffers from two interacting challenges:
 performance data are expensive and physically demanding to collect and therefore sparsely observed, 
@@ -24,7 +24,7 @@ $$p_t = p_0 + k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1} w_
 
 where $p_0$ is an initial performance value and $p_t$ and $w_t$ are performance and training load
 at time $t$, respectively. The first and second summands above are commonly called "fitness" and
-"fatigue" and described by their gain parameters $k_F, k_G$ and decay rates $\tau_F, \tau_G$.
+"fatigue" and are described by their gain parameters $k_F, k_G$ and decay rates $\tau_F, \tau_G$.
 
 ### Statistical flaws in the original model
 
@@ -39,8 +39,8 @@ parameter combinations that give similar model errors. It isn't difficult to see
 fatigue are antagonistic terms competing to explain changes in sparsely observed performance using
 similar time-filters on the same training load variable.
 
-[Vermeire 2022](https://pubmed.ncbi.nlm.nih.gov/35320776/) reproduce Hellard's result with eight
-performance observations on a cycle ergometer from a single subject and visualize the model error
+[Vermeire 2022](https://pubmed.ncbi.nlm.nih.gov/35320776/) reproduced Hellard's result with eight
+performance observations on a cycle ergometer from a single subject and visualized the model error
 over a grid of parameter combinations, further demonstrating that (a) the error landscape over
 $\tau_F$ and $\tau_G$ is characterized by a sharp ridge near $\tau_F = \tau_G$, and (b) the
 physiologically sensible region in which incremental fitness gains are smaller than fatigue
@@ -50,12 +50,12 @@ gains, $k_F < k_G$, results in consistently lower error than the unreasonable al
 Bayesian Banister model. Importantly, they use informative prior parameterizations to provide a
 prior belief about values the parameters can take based on existing results from the literature. 
 Importantly, they impose an informative _prior structure_ by reparameterizing $k_G = \theta k_F$ 
-and _forcing_ $\theta > 1$; in other words, preventing the model from considering the
+and imposing the constraint $\theta > 1$; in other words, preventing the model from considering the
 physiologically unreasonable region $k_F > k_G$ that Vermeire demonstrated resulted in poor model
 fit. They demonstrate that the Bayesian approach resulted in better parameter estimates, though
 uncertainty was still large, likely due to fitting the model to only 13 performance measurements
 (with additional noise likely caused by each performance being races of different lengths, and by
-having to impute some missing training loads).
+imputing some missing training loads).
 
 [Marchal 2025](https://www.nature.com/articles/s41598-025-88153-7) also take a Bayesian approach
 and test weakly- versus moderately-informed Bayesian priors. However, they drop the physiological
@@ -65,12 +65,12 @@ demonstrate a single stuck chain, indicative of a poorly tuned sampler rather th
 They conclude that the impulse response model presents major dysfunctions, though their conclusion
 rests on an estimate of a posterior distribution that did not converge, and on cross-validation
 applied to a small set of performance measurements (roughly 35 performances from nine athletes,
-of which the authors allocated roughly ten performances to the testing dataset).
+of which roughly ten performances are allocated to the testing dataset).
 
 ## The BIRM Prior
 
 The ill-conditioning issue is mitigated with a reparameterization. BIRM adopts Peng's
-reparameterization $k_F < k_G$ to restrict the model to only search for optimal parameter
+constraint $k_F < k_G$ to restrict the model to only search for optimal parameter
 combinations in a physiologically reasonable space. To motivate similar reparameterizations for
 the decay terms, we represent $k_G/k_F$ in terms of decay rates and the time it takes the impulse
 response to recover $t_r$ and peak $t_p$:
@@ -123,17 +123,17 @@ $j^{th}$ response variable $j=1,...,J$ at time $t$, $Y^{(j)}_t$, is given by
 $$ Y^{(j)}_t = \alpha^{(j)} + \gamma^{(j)} l^{(j)}\left(R_t\right) + X^{(j)}_t\beta^{(j)} + u^{(j)}_t + \epsilon^{(j)}_t$$
 
 where $\alpha^{(j)}$ is the intercept analogous to initial performance $p_0$ in Banister's formulation,
-$\gamma^{(j)}$ is a regression parameter for the linear relationship the measurement and the transformed
-latent impulse response model, $l^{(j)}(\cdot)$ is a link function to represent nonlinear relationships
-across measurement types, and $\beta^{(j)}$ are coefficients corresponding to exogenous predictors
-$X^{(j)}$.
+$\gamma^{(j)}$ is a regression parameter for the linear relationship between the measurement and the
+transformed latent impulse response model, $l^{(j)}(\cdot)$ is a link function to represent nonlinear
+relationships across measurement types, and $\beta^{(j)}$ are coefficients corresponding to exogenous
+predictors $X^{(j)}$.
 
-There are two types of error: $\epsilon^{(j)}_t \sim N(0, \sigma^2_\epsilon)$ representing IID noise,
-and $u^{(j)}_t$, a lag-1 autoregressive process orthogonalized to lie in the null space of the workout
-load and exogenous predictors and capturing variation (e.g., slow drift due to unmeasured stress and
-fatigue, daily responses to sleep and nutrition, etc.) not explained by them.
+Residuals are composed into two terms: $\epsilon^{(j)}_t \sim N(0, \sigma^2_\epsilon)$ representing IID
+noise, and $u^{(j)}_t$, a lag-1 autoregressive process orthogonalized to lie in the null space of the
+workout load and exogenous predictors and capturing variation (e.g., slow drift due to unmeasured stress
+and fatigue, daily responses to sleep and nutrition, etc.) not explained by the main effects.
 
-Every term except the
+In this package, every term except the
 impulse-response $R_t$ and the white noise $\epsilon^{(j)}_t$ is optional. Note that there are $J+1$ possible
 time grids; they are "ragged" in that training loads $w_t$ and channels $Y^{(j)}_t$ exist on their
 own measurement cadence. Each day may or may not have an observation from each channel, independently.
@@ -179,11 +179,11 @@ and both by
 
 $$M_F(w_s, g_s) = \frac{k_F w_s}{(1 + k_p g_s)(1+k_a w_s)}.$$
 
-## Concrete example: HRV and speed
+## Example: HRV and speed
 
-$Y^{(1)}_t$ and $Y^{(2)}_t$ are HRV and speed, respectively. $X^{(1)}_t$ contains the training load to
-potentially capture a daily HRV suppression effect $\beta^{(1)}_t$, and $X^{(2)}_t$ contains outdoor
-temperature to adjust for heat and an indicator of whether each run was performed indoors on a treadmill,
+$Y^{(1)}_t$ and $Y^{(2)}_t$ are HRV and speed, respectively. $X^{(1)}_t$ is the training load $w_t$ to
+represent a possible daily HRV suppression effect $\beta^{(1)}_t$, and $X^{(2)}_t$ contains outdoor
+temperature (to adjust for heat) and an indicator of whether each run was performed indoors on a treadmill,
 giving speed two exogenous predictors. HRV is observed near daily, so we include a $u^{(1)}_t$ term. speed
 is more sparsely observed; no $u$ is warranted. Both channels use the identity link
 $l^{(1)}(x) = l^{(2)}(x) = x$, and we set $\gamma^{(1)} \equiv 1$ so the scale of the IR model is pinned
@@ -203,7 +203,7 @@ model = IRModel(
     fitness="ceddia",
     fatigue="banister",
     metrics=(
-        Metric("hrv", exog=("w",), ar1=True),  # beta^(hrv) suppression + u^(hrv) drift
+        Metric("hrv", exog=("w",), ar1=True),  # hrv suppression + drift (u)
         Metric("speed", exog=("temp", "indoor")),  # heat + treadmill effects
     ),
 )

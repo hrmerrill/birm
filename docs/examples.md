@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from birm import Panel
 
+# create example data as a long-form pandas dataframe
 df = pd.DataFrame(
     {
         "date": ["2025-01-03", "2025-01-03", "2025-01-04", "2025-01-06"],
@@ -50,6 +51,7 @@ value column named after the metric, and (possibly) exogenous variables. Blank c
 unobserved days.
 
 ```python
+# create an example dataset as a dict of multiple wide-form dataframes
 sheets = {
     "w": pd.DataFrame({"date": ["2025-01-03"], "w": [210.0]}),
     "hrv": pd.DataFrame(
@@ -80,7 +82,7 @@ and to back-transform predictions.
 
 ## Specifying a model
 
-Once you have a `Panel`, an `IRModel` declares *which* impulse-response model to fit. The IR
+Once you have a `Panel`, an `IRModel` declares which impulse-response model to fit. The IR
 model is composed of antagonistic terms `R_t = f_t - g_t`, with `f_t` and `g_t` commonly
 called `fitness` and `fatigue`. You choose which form each term can take.
 
@@ -151,11 +153,7 @@ Metric(
 idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 ```
 
-!!! warning "Under construction"
-    `.fit()` currently performs the full spec/panel validation and then raises
-    `NotImplementedError` — the latent-stock and observation layers are still being wired up. The
-    validation is live, so a misnamed metric or an `exog` column the panel does not carry already
-    raises a clear `ValueError`.
+(TODO: show how to use `idata`.)
 
 ### Overriding priors
 

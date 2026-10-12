@@ -18,7 +18,7 @@ training.
 
 Suppose you track loads and metrics in different tables. Each sheet has a `date` column, a
 value column named after the metric, and the exogenous variables. Blank cells mark unobserved days.
-You prepare you data into a `Panel`:
+You prepare your data into a `Panel`:
 
 ```python
 import pandas as pd
@@ -27,10 +27,10 @@ import pandas as pd
 training_load_df = pd.DataFrame("/path/to/training_load.csv")
 
 # has columns 'hrv', 'w' (missing on rest days) and 'date'
-hrv_df = pd.DataFrame("/path/to/training_load.csv")
+hrv_df = pd.DataFrame("/path/to/hrv.csv")
 
 # has columns 'speed', 'temp', 'indoor' (1 or 0) and 'date'
-speed_df = pd.DataFrame("/path/to/training_load.csv")
+speed_df = pd.DataFrame("/path/to/speed.csv")
 
 sheets = {"w": training_load_df, "hrv": hrv_df, "speed": speed_df}
 
@@ -64,5 +64,5 @@ idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 
 ## Read More
 
-See [Model](model.md) for a more detailed description of the model, [Examples](examples.md) fo
+See [Model](model.md) for a more detailed description of the model, [Examples](examples.md) for
 more examples, and [API Reference](api.md) for full documentation.
