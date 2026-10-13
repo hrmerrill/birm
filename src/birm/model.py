@@ -38,7 +38,7 @@ _K_F_FACTOR = 0.1  # HalfNormal(k_F) sigma = factor * densest spread
 _K_SIGMA = 1.0  # HalfNormal for the Ceddia periodization/taper strengths k_p, k_a
 _ALPHA_FACTOR = 3.0  # Normal(alpha) sigma = factor * metric spread
 _GAMMA = (1.0, 1.0)  # Normal(mu, sigma) for estimated readout scales
-_PHI_U = (0.8, 0.15, 0.4, 0.98)  # TruncatedNormal(mu, sigma, lower, upper) for the AR(1) coef
+_PHI_U = (0.0, 1.0)  # Uniform(lower, upper) for the AR(1) coef
 
 # Default sampler settings. The near-unit-root AR(1) residual gives a funnel-like geometry that
 # needs the nutpie NUTS backend with long tuning and a high target-accept to mix; ``progressbar`` is
@@ -420,11 +420,9 @@ class IRModel:
         phi = _rv(
             self.priors,
             f"phi_u_{name}",
-            "TruncatedNormal",
-            mu=_PHI_U[0],
-            sigma=_PHI_U[1],
-            lower=_PHI_U[2],
-            upper=_PHI_U[3],
+            "Uniform",
+            lower=_PHI_U[0],
+            upper=_PHI_U[1],
         )
         sigma_u = _rv(self.priors, f"sigma_u_{name}", "HalfNormal", sigma=spread)
         wU = pm.Normal(f"wU_{name}", 0.0, 1.0, shape=grid_len)
