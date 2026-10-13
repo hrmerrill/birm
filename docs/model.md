@@ -75,10 +75,10 @@ combinations in a physiologically reasonable space. To motivate similar reparame
 the decay terms, we represent $k_G/k_F$ in terms of decay rates and the time it takes the impulse
 response to recover $t_r$ and peak $t_p$:
 
-$$k_G/k_F = (\tau_F/\tau_G)^{\left(\frac{1}{t_p/t_n} - 1\right)} $$
+$$k_G/k_F = (\tau_F/\tau_G)^{\left(\frac{1}{t_p/t_r} - 1\right)} $$
 
-This satisfies the constraint $k_G/k_F > 1$ either when $\tau_F > \tau_G$ and $t_p > t_n$,
-or when $\tau_F < \tau_G$ and $t_p < t_n$. The former is the physiologically reasonable
+This satisfies the constraint $k_G/k_F > 1$ either when $\tau_F > \tau_G$ and $t_p > t_r$,
+or when $\tau_F < \tau_G$ and $t_p < t_r$. The former is the physiologically reasonable
 scenario: fitness is accumulated over longer timescales than fatigue, and the impulse response
 recovers before it peaks.
 
