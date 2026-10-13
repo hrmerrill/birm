@@ -221,3 +221,6 @@ __marimo__/
 
 # Mac detritus
 .DS_Store
+
+# Don't push the paper
+the_paper/

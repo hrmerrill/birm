@@ -8,10 +8,10 @@ physiologically meaningful restricted priors.
 ## Background
 
 The Banister impulse-response model (and its many variants) provides insights into the
-effects of training on performance through the inference of athetic performance's responses to a 
-training dose and the prediction of performance ability. It suffers from two interacting challenges:
+effects of training on performance through the inference of athetic performance's responses to 
+training dose as well as the prediction of future performance. It suffers from two interacting challenges:
 performance data are expensive and physically demanding to collect and therefore sparsely observed, 
-and the parameters of interest are often ill-conditioned. Without a dense, high-signal dataset from
+and the parameters of interest are ill-conditioned. Without a dense, high-signal dataset from
 which to learn, actionable insights from posterior parameter estimates and performance forecasts are
 unlikely.
 

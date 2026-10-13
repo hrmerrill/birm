@@ -15,7 +15,17 @@ inference issues common in the literature, and the model allows for multivariate
 outputs so that parameters can be informed by multiple metrics of performance adjusted for
 their external influencers.
 
-## Preparing data
+## Usage
+
+### Installation
+
+Install from PyPI:
+
+```
+pip install birm
+```
+
+### Preparing data
 
 The `Panel` is the model-ready dataset used by `birm` to align loads, metrics and exogenous
 predictors. Build a `Panel` from a single long-form table:
@@ -40,7 +50,7 @@ panel.densest()  # 'hrv' has the most observations
 See the [docs](https://hrmerrill.github.io/birm/examples/) for more ways to build the `Panel` from
 your data.
 
-## Specifying a model
+### Specifying a model
 
 An `IRModel` is the declarative spec of the shared-stock impulse-response model. You define it by
 picking a `fitness` × `fatigue` core and attach one `Metric` per response series, then fit it with
