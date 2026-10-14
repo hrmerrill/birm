@@ -224,3 +224,7 @@ __marimo__/
 
 # Don't push the paper
 the_paper/
+
+# don't push MCMC samples or local data
+cache/
+*.nc
