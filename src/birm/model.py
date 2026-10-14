@@ -25,6 +25,7 @@ from birm.data import Panel
 FITNESS = ("banister", "ceddia_periodize", "ceddia_taper", "ceddia")
 FATIGUE = ("banister", "busso", "none")
 LINKS = ("identity", "log", "logit")
+PARAMETERIZATIONS = ("informed", "direct")
 
 # Default prior hyperparameters. Scales marked ``* spread`` are multiplied by the densest
 # or per-metric response spread so gains stay O(1) whether or not the panel was standardized.
@@ -36,6 +37,15 @@ _LAMBDA_G = (8.0, 0.4)  # LogNormal(log mu, sigma) margin: tau_G = tau_v + lambd
 _THETA = (4.0, 0.5)  # LogNormal(log mu, sigma) driver: k_G = (theta + 1) k_F, r = theta + 1
 _K_F_FACTOR = 0.1  # HalfNormal(k_F) sigma = factor * densest spread
 _K_SIGMA = 1.0  # HalfNormal for the Ceddia periodization/taper strengths k_p, k_a
+
+# Weakly-informative defaults for the ``direct`` (unconstrained) parameterization: the gains and
+# both timescales are sampled independently over wide ranges, with no ordering or gain-ratio
+# constraint. This is the ill-conditioned baseline that the ``informed`` reparameterization exists
+# to fix, so expect ridges/divergences near tau_F = tau_G.
+_K_DIRECT_FACTOR = 1.0  # HalfNormal(k_F), HalfNormal(k_G) sigma = factor * densest spread
+_TAU_F_DIRECT = (20.0, 1.0)  # LogNormal(log mu, sigma) days, fitness timescale (direct)
+_TAU_G_DIRECT = (5.0, 1.0)  # LogNormal(log mu, sigma) days, fatigue timescale (direct)
+_TAU_V_DIRECT = (3.0, 1.0)  # LogNormal(log mu, sigma) days, Busso accumulation timescale (direct)
 _ALPHA_FACTOR = 3.0  # Normal(alpha) sigma = factor * metric spread
 _GAMMA = (1.0, 1.0)  # Normal(mu, sigma) for estimated readout scales
 _PHI_U = (0.0, 1.0)  # Uniform(lower, upper) for the AR(1) coef
@@ -172,6 +182,14 @@ class IRModel:
         Response metrics sharing the single latent stock.
     priors : dict[str, Prior]
         Optional overrides for named model parameters (e.g. ``k_p``, ``k_a``, ``tau_v``).
+    parameterization : str
+        Latent-stock prior geometry; one of ``informed`` or ``direct``. ``informed`` (default)
+        samples the identifiable reparameterized margins ($\theta, \lambda_F, \lambda_G$) so the
+        gain ratio and timescale ordering $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with
+        certainty (off the $\tau_F = \tau_G$ ridge). ``direct`` instead samples $k_F$, $k_G$,
+        $\tau_F$, $\tau_G$ (and Busso $\tau_v$) independently from weakly-informative
+        ``HalfNormal``/``LogNormal`` priors over wide ranges, with no ordering or gain-ratio
+        constraint -- the ill-conditioned baseline the reparameterization is designed to fix.
     """
 
     load: Load
@@ -179,6 +197,7 @@ class IRModel:
     fatigue: str
     metrics: tuple[Metric, ...]
     priors: dict[str, Prior] = field(default_factory=dict)
+    parameterization: str = "informed"
 
     def __post_init__(self) -> None:
         """Validate the core selection and metric uniqueness.
@@ -186,13 +205,18 @@ class IRModel:
         Raises
         ------
         ValueError
-            If ``fitness``/``fatigue`` are unrecognized, no metrics are given, or metric names
-            are not unique.
+            If ``fitness``/``fatigue``/``parameterization`` are unrecognized, no metrics are given,
+            or metric names are not unique.
         """
         if self.fitness not in FITNESS:
             raise ValueError(f"fitness must be one of {FITNESS}, got {self.fitness!r}")
         if self.fatigue not in FATIGUE:
             raise ValueError(f"fatigue must be one of {FATIGUE}, got {self.fatigue!r}")
+        if self.parameterization not in PARAMETERIZATIONS:
+            raise ValueError(
+                f"parameterization must be one of {PARAMETERIZATIONS}, "
+                f"got {self.parameterization!r}"
+            )
         if not self.metrics:
             raise ValueError("at least one metric is required")
         names = [m.name for m in self.metrics]
@@ -276,25 +300,11 @@ class IRModel:
             orthogonalization design $[\mathbf{1}, i_1, i_2]$ built from the **gain-free**
             base integrals (so the residual cannot soak up either dose-response direction).
         """
-        k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_F_FACTOR * scale)
-        tau_v = None
-        if self.fatigue == "busso":
-            tau_v = _rv(self.priors, "tau_v", "LogNormal", mu=np.log(_TAU_V[0]), sigma=_TAU_V[1])
-            lambda_g = _rv(
-                self.priors, "lambda_g", "LogNormal", mu=np.log(_LAMBDA_G[0]), sigma=_LAMBDA_G[1]
-            )
-            tau_G = pm.Deterministic("tau_G", fatigue_timescale(tau_v, lambda_g))
+        if self.parameterization == "direct":
+            k_F, tau_F, k_G, tau_G, tau_v = self._stock_params_direct(scale)
         else:
-            tau_G = _rv(self.priors, "tau_G", "LogNormal", mu=np.log(_TAU_G[0]), sigma=_TAU_G[1])
-        lambda_f = _rv(
-            self.priors, "lambda_f", "LogNormal", mu=np.log(_LAMBDA_F[0]), sigma=_LAMBDA_F[1]
-        )
-        tau_F = pm.Deterministic("tau_F", fitness_timescale(tau_G, lambda_f))
-
-        k_G: Any = 0.0
+            k_F, tau_F, k_G, tau_G, tau_v = self._stock_params_informed(scale)
         if self.fatigue != "none":
-            theta = _rv(self.priors, "theta", "LogNormal", mu=np.log(_THETA[0]), sigma=_THETA[1])
-            k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
             pm.Deterministic("admiss", admissibility(k_F, k_G, tau_F, tau_G))
 
         k_p: Any = 0.0
@@ -327,6 +337,86 @@ class IRModel:
             cols.append(_ar1(pt.exp(-1.0 / tau_G), drive))
         ortho = pt.stack(cols, axis=1)
         return pm.Deterministic("R", stock), ortho
+
+    def _stock_params_informed(self, scale: float) -> tuple[Any, Any, Any, Any, Any]:
+        r"""Sample the identifiable reparameterized stock parameters.
+
+        Samples $k_F$ and the non-negative margins ($\theta, \lambda_F, \lambda_G$), then derives
+        $k_G = (\theta + 1) k_F$, $\tau_F = 1 + \tau_G + \lambda_F$, and (Busso)
+        $\tau_G = \tau_v + \lambda_G$ as ``Deterministic``s so the ordering
+        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty.
+
+        Parameters
+        ----------
+        scale : float
+            Spread of the densest metric's response, used to scale the gain prior.
+
+        Returns
+        -------
+        tuple[Any, Any, Any, Any, Any]
+            The ``(k_F, tau_F, k_G, tau_G, tau_v)`` tensors; ``k_G`` is ``0.0`` when
+            ``fatigue="none"`` and ``tau_v`` is ``None`` unless ``fatigue="busso"``.
+        """
+        k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_F_FACTOR * scale)
+        tau_v = None
+        if self.fatigue == "busso":
+            tau_v = _rv(self.priors, "tau_v", "LogNormal", mu=np.log(_TAU_V[0]), sigma=_TAU_V[1])
+            lambda_g = _rv(
+                self.priors, "lambda_g", "LogNormal", mu=np.log(_LAMBDA_G[0]), sigma=_LAMBDA_G[1]
+            )
+            tau_G = pm.Deterministic("tau_G", fatigue_timescale(tau_v, lambda_g))
+        else:
+            tau_G = _rv(self.priors, "tau_G", "LogNormal", mu=np.log(_TAU_G[0]), sigma=_TAU_G[1])
+        lambda_f = _rv(
+            self.priors, "lambda_f", "LogNormal", mu=np.log(_LAMBDA_F[0]), sigma=_LAMBDA_F[1]
+        )
+        tau_F = pm.Deterministic("tau_F", fitness_timescale(tau_G, lambda_f))
+
+        k_G: Any = 0.0
+        if self.fatigue != "none":
+            theta = _rv(self.priors, "theta", "LogNormal", mu=np.log(_THETA[0]), sigma=_THETA[1])
+            k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
+        return k_F, tau_F, k_G, tau_G, tau_v
+
+    def _stock_params_direct(self, scale: float) -> tuple[Any, Any, Any, Any, Any]:
+        r"""Sample the unconstrained (baseline) stock parameters directly.
+
+        Draws $k_F$, $k_G$, $\tau_F$, $\tau_G$ (and Busso $\tau_v$) from independent
+        weakly-informative ``HalfNormal``/``LogNormal`` priors over wide ranges, with no gain-ratio
+        or timescale-ordering constraint. This is the ill-conditioned baseline the ``informed``
+        reparameterization is designed to fix.
+
+        Parameters
+        ----------
+        scale : float
+            Spread of the densest metric's response, used to scale the gain priors.
+
+        Returns
+        -------
+        tuple[Any, Any, Any, Any, Any]
+            The ``(k_F, tau_F, k_G, tau_G, tau_v)`` tensors; ``k_G`` is ``0.0`` when
+            ``fatigue="none"`` and ``tau_v`` is ``None`` unless ``fatigue="busso"``.
+        """
+        k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_DIRECT_FACTOR * scale)
+        tau_F = _rv(
+            self.priors, "tau_F", "LogNormal", mu=np.log(_TAU_F_DIRECT[0]), sigma=_TAU_F_DIRECT[1]
+        )
+        tau_G = _rv(
+            self.priors, "tau_G", "LogNormal", mu=np.log(_TAU_G_DIRECT[0]), sigma=_TAU_G_DIRECT[1]
+        )
+        tau_v = None
+        if self.fatigue == "busso":
+            tau_v = _rv(
+                self.priors,
+                "tau_v",
+                "LogNormal",
+                mu=np.log(_TAU_V_DIRECT[0]),
+                sigma=_TAU_V_DIRECT[1],
+            )
+        k_G: Any = 0.0
+        if self.fatigue != "none":
+            k_G = _rv(self.priors, "k_G", "HalfNormal", sigma=_K_DIRECT_FACTOR * scale)
+        return k_F, tau_F, k_G, tau_G, tau_v
 
     def _metric(
         self, data: Any, metric: Metric, stock: Any, ortho: Any, grid_len: int, dense: str

@@ -120,6 +120,41 @@ def test_unknown_core_rejected() -> None:
         IRModel(load=Load("w"), fitness="banister", fatigue="nope", metrics=(Metric("hrv"),))
 
 
+@pytest.mark.parametrize("fatigue", ["banister", "busso", "none"])
+def test_direct_parameterization_samples_raw_params(fatigue: str) -> None:
+    """``direct`` mode exposes k_G/tau_F/tau_G as free RVs and drops the reparam margins."""
+    spec = IRModel(
+        load=Load("w"),
+        fitness="banister",
+        fatigue=fatigue,
+        metrics=(Metric("hrv", ar1=True), Metric("speed")),
+        parameterization="direct",
+    )
+    built = spec.build_model(_panel())
+    names = _named(built)
+    free = {v.name for v in built.free_RVs}
+    assert {"R", "k_F", "tau_F", "tau_G"} <= names
+    # No reparameterization margins in direct mode.
+    assert {"theta", "lambda_f", "lambda_g"}.isdisjoint(names)
+    # tau_F/tau_G are sampled directly rather than derived.
+    assert {"tau_F", "tau_G"} <= free
+    assert ("admiss" in names) == (fatigue != "none")
+    assert ("k_G" in free) == (fatigue != "none")
+    assert ("tau_v" in free) == (fatigue == "busso")
+
+
+def test_unknown_parameterization_rejected() -> None:
+    """An unrecognized parameterization raises ValueError at construction."""
+    with pytest.raises(ValueError, match="parameterization"):
+        IRModel(
+            load=Load("w"),
+            fitness="banister",
+            fatigue="banister",
+            metrics=(Metric("hrv"),),
+            parameterization="nope",
+        )
+
+
 def test_duplicate_and_empty_metrics_rejected() -> None:
     """Duplicate metric names and empty metric tuples raise ValueError."""
     with pytest.raises(ValueError, match="unique"):
