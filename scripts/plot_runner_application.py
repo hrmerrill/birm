@@ -14,12 +14,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib
+import matplotlib  # ty: ignore[unresolved-import]
 
 matplotlib.use("Agg")
 
 import arviz as az  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402  # ty: ignore[unresolved-import]
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -69,20 +69,20 @@ def main() -> None:
         ("$k_G$", k_G),
         ("$\\tau_F$", tau_F),
         ("$\\tau_G$", tau_G),
-        ("$\\sigma^{2\\text{perf}}_\\epsilon$", sig2_perf),
-        ("$\\sigma^{2\\text{HRV}}_\\epsilon$", sig2_hrv),
-        ("$\\sigma^{2\\text{HRV}}_u$", flat("sigma_u_hrv") ** 2),
         ("$\\alpha^{\\text{perf}}$", alpha_perf),
         ("$\\alpha^{\\text{HRV}}$", alpha_hrv),
         ("$\\beta^{\\text{perf}}$", beta_perf),
         ("$\\beta^{\\text{HRV}}$", beta_hrv),
         ("$\\gamma^{\\text{perf}}$", gamma_perf),
         ("$\\rho^{\\text{HRV}}_u$", rho_hrv),
+        ("$\\sigma^{2\\text{perf}}_\\epsilon$", sig2_perf),
+        ("$\\sigma^{2\\text{HRV}}_\\epsilon$", sig2_hrv),
+        ("$\\sigma^{2\\text{HRV}}_u$", flat("sigma_u_hrv") ** 2),
     ]
     print("\n=== Table 1: posterior mean (95% CI) ===")
     for label, draws in rows:
         m, lo, hi = _ci(draws)
-        print(f"{label:35s}  {m:7.3f}  ({lo:.3f}, {hi:.3f})")
+        print(f"{label} & {m:.3f} ({lo:.3f}, {hi:.3f}) \\\\")
 
     # --- structural trends (alpha + gamma * R, back-transformed to raw units) ---
     R = flat("R")  # (draws, T)
