@@ -1,6 +1,7 @@
 r"""Publication figure: joint posteriors of the gain and timescale pairs across four models.
 
 A 2 x 4 grid. Top row is the joint posterior of $(k_F, k_G)$; bottom row is $(\tau_F, \tau_G)$.
+Pass ``--times`` to append a third row of the derived recovery and peak times $(\tau_r, \tau_p)$.
 Columns left to right: unconstrained baseline, constrained baseline, joint (no exog),
 joint + exog. Each panel shows a KDE heat map of the MCMC samples, the posterior mean, and the
 2D 95% highest-density credible contour. Axis ranges are shared within each row so the
@@ -13,6 +14,7 @@ Run::
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 from typing import Any
 
@@ -47,14 +49,21 @@ MODEL_METRICS: dict[str, list[str]] = {
 MODEL_EXOG: dict[str, dict[str, list[str]]] = {
     "runner_application_full": {"hrv": ["load_prev"], "speed": ["wetbulb"]},
 }
-ROWS = (("k_F", "k_G"), ("tau_F", "tau_G"))
-LABELS = {"k_F": r"$k_F$", "k_G": r"$k_G$", "tau_F": r"$\tau_F$", "tau_G": r"$\tau_G$"}
-LETTERS = "abcdefgh"
+ROWS = (("k_F", "k_G"), ("tau_F", "tau_G"), ("tau_r", "tau_p"))
+LABELS = {
+    "k_F": r"$k_F$",
+    "k_G": r"$k_G$",
+    "tau_F": r"$\tau_F$",
+    "tau_G": r"$\tau_G$",
+    "tau_r": r"$t_r$",
+    "tau_p": r"$t_p$",
+}
+LETTERS = "abcdefghijkl"
 
 # Shared per-row axes span this multiple of the bounding box of the row's smallest posterior
 # region (the tightest model), centered on it. Raise to reveal more of the wider models; lower to
 # zoom further into the smallest regions.
-AXIS_SCALE = 6.0
+AXIS_SCALE = 8.0
 
 
 def _flat(idata: Any, name: str) -> np.ndarray:
@@ -178,16 +187,35 @@ def _print_table2(
     print(row(r"$R^2$ (95\% CI)", r2_cells))
 
 
-def main() -> None:
-    """Build and save the 2 x 4 posterior-grid figure, then print the Table 2 body."""
+def _recovery_peak(d: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    r"""Derive recovery $t_r$ and peak $t_p$ times (paper Eqs. recovery/peak), per draw."""
+    factor = d["tau_F"] * d["tau_G"] / (d["tau_F"] - d["tau_G"])
+    t_r = factor * np.log(d["k_G"] / d["k_F"])
+    t_p = factor * np.log(d["k_G"] * d["tau_F"] / (d["k_F"] * d["tau_G"]))
+    return t_r, t_p
+
+
+def main(times: bool = False) -> None:
+    """Build and save the posterior-grid figure, then print the Table 2 body.
+
+    Parameters
+    ----------
+    times : bool
+        When ``True``, append a third row of the derived recovery $t_r$ and peak $t_p$ times.
+    """
     idatas: dict[str, Any] = {f.split(".")[0]: az.from_netcdf(str(CACHE / f)) for f in MODELS}
     keys: list[str] = list(idatas)
     draws: dict[str, dict[str, np.ndarray]] = {
         k: {p: _flat(idatas[k], p).ravel() for p in ("k_F", "k_G", "tau_F", "tau_G")} for k in keys
     }
+    rows = ROWS if times else ROWS[:2]
+    if times:
+        for k in keys:
+            draws[k]["tau_r"], draws[k]["tau_p"] = _recovery_peak(draws[k])
 
-    fig, axes = plt.subplots(2, 4, figsize=(8.0, 4.3), constrained_layout=True)
-    for r, (px, py) in enumerate(ROWS):
+    nrows = len(rows)
+    fig, axes = plt.subplots(nrows, 4, figsize=(8.0, 2.15 * nrows), constrained_layout=True)
+    for r, (px, py) in enumerate(rows):
         limits = _row_limits(draws, keys, px, py)
         xlim, ylim = limits[px], limits[py]
         for c, k in enumerate(keys):
@@ -226,4 +254,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--times",
+        action="store_true",
+        help="append a third row with the derived recovery (t_r) and peak (t_p) times",
+    )
+    main(times=parser.parse_args().times)
