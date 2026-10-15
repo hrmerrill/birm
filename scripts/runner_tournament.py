@@ -47,7 +47,7 @@ CACHE = ROOT / "cache"
 FIT = CACHE / "runner_application_full.nc"
 DATA = CACHE / "model_ready_long.csv"
 
-HORIZON = 28  # forecast length (days)
+HORIZON = 42  # forecast length (days)
 SEED = 0
 
 # Daily training-load levels in raw rTSS units (see paper / user spec).
@@ -63,11 +63,10 @@ SEED = 0
 # │ 95th       │ 108.57 │
 # ├────────────┼────────┤
 # │ 99th       │ 130.66 │
-HIGH = 90  # a HIGH-intensity session; also Max's every-day load and TRA's high days
+HIGH = 72  # a HIGH-intensity session; also Max's every-day load and TRA's high days
 LOW_HIGH_RATIO = 0.592  # from the Kiviniemi paper
-LOW = (
-    HIGH * LOW_HIGH_RATIO
-)  # a LOW-intensity / recovery session; TRA's low days (50th pct of training-day loads)
+# a LOW-intensity / recovery session; TRA's low days (50th pct of training-day loads)
+LOW = HIGH * LOW_HIGH_RATIO
 REST = 0.0
 
 # Kiviniemi (2007) HRV-guided controller settings (Eur J Appl Physiol 101:743-751).

@@ -332,7 +332,7 @@ def fig_baseline_vs_constrained(df: pd.DataFrame) -> None:
         ("log_ess", r"$\log_{10}$ min ESS"),
     ]
     colors = {m: MODEL_COLORS[m] for m in ("baseline", "constrained")}
-    fig, axes = plt.subplots(2, 2, figsize=_figstyle.size(6, 4.0))
+    fig, axes = plt.subplots(2, 2, figsize=_figstyle.size(6, 5.0))
     for i, (ax, (col, label)) in enumerate(zip(axes.ravel(), panels, strict=True)):
         series = {m: _by_cadence(df, m, col) for m in colors}
         clip = (-1.0, 1.0) if col in ("corr_k", "corr_tau") else None
