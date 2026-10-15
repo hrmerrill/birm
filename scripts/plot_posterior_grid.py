@@ -225,8 +225,15 @@ def main(times: bool = False) -> None:
             ax.pcolormesh(mesh_x, mesh_y, dens, cmap="Greys", shading="auto", rasterized=True)
             step = max(1, x.size // 2000)
             ax.plot(
-                x[::step], y[::step], ls="", marker="o", ms=2, mfc="black", mec="none",
-                alpha=0.12, rasterized=True,
+                x[::step],
+                y[::step],
+                ls="",
+                marker="o",
+                ms=2,
+                mfc="black",
+                mec="none",
+                alpha=0.12,
+                rasterized=True,
             )
             ax.contour(mesh_x, mesh_y, dens, levels=[level], colors="black", linewidths=0.9)
             ax.plot(

@@ -136,7 +136,14 @@ def _contour(
     ax.pcolormesh(mx, my, dens, shading="auto", cmap="Greys", rasterized=True)
     step = max(1, x.size // 2000)
     ax.plot(
-        x[::step], y[::step], ls="", marker="o", ms=2, mfc=color, mec="none", alpha=0.12,
+        x[::step],
+        y[::step],
+        ls="",
+        marker="o",
+        ms=2,
+        mfc=color,
+        mec="none",
+        alpha=0.12,
         rasterized=True,
     )
     ax.contour(mx, my, dens, levels=[level], colors=color, linewidths=1.2)
