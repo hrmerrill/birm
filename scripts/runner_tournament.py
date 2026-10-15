@@ -193,7 +193,7 @@ def forecast_static(
     """
     a_f, a_g = np.exp(-1.0 / flat["tau_F"]), np.exp(-1.0 / flat["tau_G"])
     i_f, i_g = i_f.copy(), i_g.copy()
-    r = None
+    r = flat["k_F"] * i_f - flat["k_G"] * i_g
     for w in loads:
         d = w / load_mean
         i_f = a_f * i_f + d
