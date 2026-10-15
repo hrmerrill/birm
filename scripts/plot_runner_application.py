@@ -7,7 +7,7 @@ with fitted structural impulse-response trends and 95% credible bands.
 
 Run::
 
-    uv run --with netCDF4 python scripts/plot_runner_application.py
+    uv run --with netCDF4 --with matplotlib python scripts/plot_runner_application.py
 """
 
 from __future__ import annotations
