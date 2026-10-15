@@ -47,7 +47,10 @@ CACHE = ROOT / "cache"
 RESULTS = CACHE / "sim_study_results.csv"
 
 sys.path.insert(0, str(ROOT / "scripts"))
+import _figstyle  # noqa: E402
 import fit_study as fs  # noqa: E402
+
+_figstyle.apply()
 
 CADENCES = list(fs.CADENCES)
 CAD_LABELS = {
@@ -146,9 +149,9 @@ def _contour(
         alpha=0.12,
         rasterized=True,
     )
-    ax.contour(mx, my, dens, levels=[level], colors=color, linewidths=1.2)
-    ax.plot(x.mean(), y.mean(), "o", ms=5, mfc=color, mec="white", mew=0.8)
-    ax.plot(*true_xy, marker="*", ms=14, mfc="gold", mec="black", mew=0.8, ls="")
+    ax.contour(mx, my, dens, levels=[level], colors=color, linewidths=0.9)
+    ax.plot(x.mean(), y.mean(), "o", ms=4.5, mfc=color, mec="white", mew=0.8)
+    ax.plot(*true_xy, marker="*", ms=7, mfc="white", mec="black", mew=0.8, ls="")
     if log:
         ax.set_xscale("log")
         ax.set_yscale("log")
@@ -176,7 +179,7 @@ def _letter(ax: Any, i: int, loc: str = "lower right") -> None:
     x, y = xmap[hx], ymap[vy]
     ha = hx
     va = "bottom" if vy == "lower" else "top"
-    ax.text(x, y, f"({LETTERS[i]})", transform=ax.transAxes, fontsize=10, ha=ha, va=va)
+    ax.text(x, y, f"({LETTERS[i]})", transform=ax.transAxes, fontsize=_figstyle.ANNOT, ha=ha, va=va)
 
 
 def fig_geometry() -> None:
@@ -187,7 +190,7 @@ def fig_geometry() -> None:
         for r, pair in enumerate(PAIRS)
         for model in fs.MODELS
     }
-    fig, axes = plt.subplots(2, 3, figsize=(11, 7))
+    fig, axes = plt.subplots(2, 3, figsize=_figstyle.size(11, 7))
     for r, pair in enumerate(PAIRS):
         log = pair == ("k_F", "k_G")
         xs = np.concatenate([draws[(r, m)][0] for m in fs.MODELS] + [[fs.TRUE[pair[0]]]])
@@ -202,14 +205,14 @@ def fig_geometry() -> None:
             ax = axes[r, c]
             x, y = draws[(r, model)]
             true_xy = (fs.TRUE[pair[0]], fs.TRUE[pair[1]])
-            _contour(ax, x, y, true_xy, MODEL_COLORS[model], limits, log=log)
+            _contour(ax, x, y, true_xy, "black", limits, log=log)
             lx, ly = PAIR_LABELS[pair]
-            ax.set_xlabel(lx, fontsize=11)
-            ax.set_ylabel(ly, fontsize=11)
+            ax.set_xlabel(lx)
+            ax.set_ylabel(ly)
             _letter(ax, r * 3 + c, loc="upper left")
-    fig.tight_layout(w_pad=0.3, h_pad=0.3)
+    fig.tight_layout(pad=0.4, w_pad=0.4, h_pad=0.6)
     out = CACHE / "sim_posterior_geometry.jpg"
-    fig.savefig(out, dpi=300, format="jpg")
+    fig.savefig(out, dpi=600, format="jpg")
     plt.close(fig)
     print(f"saved -> {out}")
 
@@ -290,8 +293,7 @@ def _grouped_violins(
         parts["cmedians"].set_color("black")
         parts["cmedians"].set_linewidth(1.0)
     ax.set_xticks(base)
-    ax.set_xticklabels([CAD_LABELS[c] for c in CADENCES], fontsize=8)
-    ax.tick_params(labelsize=8)
+    ax.set_xticklabels([CAD_LABELS[c] for c in CADENCES])
 
 
 def _by_cadence(df: pd.DataFrame, model: str, col: str) -> list[np.ndarray]:
@@ -330,19 +332,19 @@ def fig_baseline_vs_constrained(df: pd.DataFrame) -> None:
         ("log_ess", r"$\log_{10}$ min ESS"),
     ]
     colors = {m: MODEL_COLORS[m] for m in ("baseline", "constrained")}
-    fig, axes = plt.subplots(1, 4, figsize=(16, 4.2))
+    fig, axes = plt.subplots(2, 2, figsize=_figstyle.size(6, 4.0))
     for i, (ax, (col, label)) in enumerate(zip(axes.ravel(), panels, strict=True)):
         series = {m: _by_cadence(df, m, col) for m in colors}
         clip = (-1.0, 1.0) if col in ("corr_k", "corr_tau") else None
         _grouped_violins(ax, series, colors, clip=clip)
-        ax.set_ylabel(label, fontsize=10)
-        ax.set_xlabel("observation cadence", fontsize=9)
+        ax.set_ylabel(label)
+        ax.set_xlabel("observation cadence")
         _letter(ax, i, loc="lower right")
     handles = [plt.Line2D([], [], color=colors[m], lw=6, alpha=0.55) for m in colors]
-    fig.legend(handles, list(colors), loc="lower center", ncol=2, fontsize=10, frameon=False)
-    fig.tight_layout(rect=(0, 0.08, 1, 1), w_pad=0.4)
+    fig.legend(handles, list(colors), loc="lower center", ncol=2, frameon=False)
+    fig.tight_layout(rect=(0, 0.04, 1, 1), w_pad=0.4, h_pad=1.0)
     out = CACHE / "sim_baseline_vs_constrained.jpg"
-    fig.savefig(out, dpi=300, format="jpg")
+    fig.savefig(out, dpi=600, format="jpg")
     plt.close(fig)
     print(f"saved -> {out}")
 
@@ -395,7 +397,7 @@ def fig_constrained_vs_joint(df: pd.DataFrame) -> None:
         ("log_area_tau", r"$\Delta\,\log_{10}$ area$(\tau_F,\tau_G)$", "diff"),
     ]
     level_colors = {m: MODEL_COLORS[m] for m in ("constrained", "joint")}
-    fig, axes = plt.subplots(1, 4, figsize=(16, 4.2))
+    fig, axes = plt.subplots(2, 2, figsize=_figstyle.size(6, 4.0))
     for i, (ax, (col, label, kind)) in enumerate(zip(axes.ravel(), panels, strict=True)):
         if kind == "level":
             series = {m: _by_cadence(df, m, col) for m in level_colors}
@@ -404,15 +406,15 @@ def fig_constrained_vs_joint(df: pd.DataFrame) -> None:
             diffs = _paired_diff(df, col)
             _grouped_violins(ax, {"d": diffs}, {"d": diff_color})
         ax.axhline(0.0, color="black", lw=0.8, ls="--")
-        ax.set_ylabel(label, fontsize=10)
-        ax.set_xlabel("observation cadence", fontsize=9)
+        ax.set_ylabel(label)
+        ax.set_xlabel("observation cadence")
         _letter(ax, i, loc="upper right")
     colors = {**level_colors, "constrained minus joint": diff_color}
     handles = [plt.Line2D([], [], color=c, lw=6, alpha=0.55) for c in colors.values()]
-    fig.legend(handles, list(colors), loc="lower center", ncol=3, fontsize=10, frameon=False)
-    fig.tight_layout(rect=(0, 0.08, 1, 1), w_pad=0.4)
+    fig.legend(handles, list(colors), loc="lower center", ncol=3, frameon=False)
+    fig.tight_layout(rect=(0, 0.04, 1, 1), w_pad=0.4, h_pad=1.0)
     out = CACHE / "sim_constrained_vs_joint.jpg"
-    fig.savefig(out, dpi=300, format="jpg")
+    fig.savefig(out, dpi=600, format="jpg")
     plt.close(fig)
     print(f"saved -> {out}")
 

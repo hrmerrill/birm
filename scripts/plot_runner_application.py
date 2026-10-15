@@ -18,12 +18,15 @@ import matplotlib  # ty: ignore[unresolved-import]
 
 matplotlib.use("Agg")
 
+import _figstyle  # noqa: E402
 import arviz as az  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402  # ty: ignore[unresolved-import]
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from birm import Panel  # noqa: E402
+
+_figstyle.apply()
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / "cache"
@@ -100,7 +103,7 @@ def main() -> None:
     mm = mm[(mm["indoor"] == 0.0) & mm[["temp_c", "rh_pct"]].notna().all(axis=1)]
     hv = pd.read_csv(CACHE / "raw_hrv.csv", parse_dates=["date"])
 
-    fig, (ax_p, ax_h) = plt.subplots(2, 1, sharex=True, figsize=(7.0, 5.0))
+    fig, (ax_p, ax_h) = plt.subplots(2, 1, sharex=True, figsize=_figstyle.size(7.0, 5.0))
 
     ax_p.scatter(mm["date"], mm["mmgap"], s=14, color="black", zorder=3)
     band(ax_p, trend_perf)
@@ -113,10 +116,9 @@ def main() -> None:
 
     for ax in (ax_p, ax_h):
         ax.spines[["top", "right"]].set_visible(False)
-    ax_h.tick_params(axis="x", labelsize=8)
     fig.align_ylabels((ax_p, ax_h))
     fig.tight_layout()
-    fig.savefig(FIG, dpi=600, format="jpg", bbox_inches="tight")
+    fig.savefig(FIG, dpi=600, format="jpg")
     print(f"\nsaved figure -> {FIG}")
 
 

@@ -28,7 +28,10 @@ from birm import Panel
 
 matplotlib.use("Agg")
 
+import _figstyle  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402  # ty: ignore[unresolved-import]
+
+_figstyle.apply()
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / "cache"
@@ -214,7 +217,9 @@ def main(times: bool = False) -> None:
             draws[k]["tau_r"], draws[k]["tau_p"] = _recovery_peak(draws[k])
 
     nrows = len(rows)
-    fig, axes = plt.subplots(nrows, 4, figsize=(8.0, 2.15 * nrows), constrained_layout=True)
+    fig, axes = plt.subplots(
+        nrows, 4, figsize=_figstyle.size(8.0, 2.15 * nrows), constrained_layout=True
+    )
     for r, (px, py) in enumerate(rows):
         limits = _row_limits(draws, keys, px, py)
         xlim, ylim = limits[px], limits[py]
@@ -241,20 +246,19 @@ def main(times: bool = False) -> None:
             )
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
-            ax.tick_params(labelsize=7)
             ax.text(
                 0.95,
                 0.03,
                 f"({LETTERS[r * 4 + c]})",
                 transform=ax.transAxes,
                 color="black",
-                fontsize=9,
+                fontsize=_figstyle.ANNOT,
                 va="bottom",
                 ha="right",
             )
-            ax.set_xlabel(LABELS[px], fontsize=10)
+            ax.set_xlabel(LABELS[px])
             if c == 0:
-                ax.set_ylabel(LABELS[py], fontsize=10)
+                ax.set_ylabel(LABELS[py])
             else:
                 ax.tick_params(labelleft=False)
 
