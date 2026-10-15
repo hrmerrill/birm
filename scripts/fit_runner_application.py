@@ -54,7 +54,7 @@ def main() -> None:
         ),
     )
 
-    idata = model.fit(panel, sampler={"random_seed": 0})
+    idata = model.fit(panel, sampler={"random_seed": 0, "tune": 5000, "target_accept": 0.995})
 
     CACHE.mkdir(exist_ok=True)
     idata.to_netcdf(str(OUT))
