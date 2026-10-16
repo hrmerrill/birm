@@ -99,9 +99,9 @@ $$\frac{1}{\log(2 - e^{-1/\tau_G})} = \tau_G + 1 + \mathcal{O}(1/\tau_G^2)$$
 and therefore admissibility $a_c$ approximately satisfies the condition $a_c > 1$ when
 $\tau_F > \tau_G + 1$. BIRM therefore uses the following parameterization and priors:
 
-$$k_G = (\theta + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
+$$k_G = (\phi + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
 
-$$\theta \sim \text{LogNormal}(\mu_\theta, \sigma_\theta^2),$$
+$$\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),$$
 
 $$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
 
@@ -130,7 +130,7 @@ predictors $X^{(j)}$.
 
 Residuals are composed into two terms: $\epsilon^{(j)}_t \sim N(0, \sigma^2_\epsilon)$ representing IID
 noise, and $u^{(j)}_t$, a lag-1 autoregressive process orthogonalized to lie in the null space of the
-workout load and exogenous predictors and capturing variation (e.g., slow drift due to unmeasured stress
+intercept and the fitness and fatigue integrals and capturing variation (e.g., slow drift due to unmeasured stress
 and fatigue, daily responses to sleep and nutrition, etc.) not explained by the main effects.
 
 In this package, every term except the
@@ -149,7 +149,7 @@ modified the fatigue gain to vary over time by responding to training load:
 
 $$R^{(V)}_t = k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - \sum_{s=0}^{t-1}k_G(s) w_s e^{-(t-s)/\tau_G},$$
 
-$$k_G(t)\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}.$$
+$$k_G(t) = \sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}.$$
 
 The nonlinear fatigue gain accumulates with more recent training on timescales that are expected to be
 smaller than fitness and fatigue level. We therefore impose the physiological constraint

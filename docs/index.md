@@ -24,13 +24,13 @@ You prepare your data into a `Panel`:
 import pandas as pd
 
 # has columns 'w' (training load) and 'date' (YYYY-MM-DD)
-training_load_df = pd.DataFrame("/path/to/training_load.csv")
+training_load_df = pd.read_csv("/path/to/training_load.csv")
 
 # has columns 'hrv', 'w' (missing on rest days) and 'date'
-hrv_df = pd.DataFrame("/path/to/hrv.csv")
+hrv_df = pd.read_csv("/path/to/hrv.csv")
 
 # has columns 'speed', 'temp', 'indoor' (1 or 0) and 'date'
-speed_df = pd.DataFrame("/path/to/speed.csv")
+speed_df = pd.read_csv("/path/to/speed.csv")
 
 sheets = {"w": training_load_df, "hrv": hrv_df, "speed": speed_df}
 

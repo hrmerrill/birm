@@ -87,8 +87,9 @@ model is composed of antagonistic terms `R_t = f_t - g_t`, with `f_t` and `g_t` 
 called `fitness` and `fatigue`. You choose which form each term can take.
 
 The IR model is shared across metrics, and each metric gets its own exogenous predictors and, 
-optionally, an AR1 term orthogonalized against `R_t` and the predictors so that it only explains 
-variability not already explained by the drivers of primary importance.
+optionally, an AR1 term orthogonalized against the intercept and the gain-free `fitness` and
+`fatigue` integrals so that it only explains variability not already explained by the drivers
+of primary importance.
 
 ```python
 from birm import IRModel, Load, Metric
@@ -138,7 +139,8 @@ Metric(
 - `link` applies a nonlinear transform between the latent stock and the measurement.
 - `exog` names columns that this metric carries in the panel (`panel.metrics[name].exog`); a
   reference to a missing column is an error at fit time.
-- `ar1` adds the lag-1 process `u^(j)`, orthogonalized against `{1, impulse, exog}` to capture slow
+- `ar1` adds the lag-1 process `u^(j)`, orthogonalized against the intercept and the gain-free
+  fitness and fatigue integrals to capture slow
   unexplained drift — use it for densely observed metrics; omit it for sparse ones.
 - `intercept` adds the baseline `alpha^(j)`; drop it only when the baseline is already removed
   (e.g. a differenced metric) or owned by another term.
