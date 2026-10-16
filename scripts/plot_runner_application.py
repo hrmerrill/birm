@@ -12,6 +12,7 @@ Run::
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib  # ty: ignore[unresolved-import]
@@ -30,7 +31,7 @@ _figstyle.apply()
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / "cache"
-FIG = CACHE / "runner_application.jpg"
+DEFAULT_NC = CACHE / "runner_application_full.nc"
 
 
 def _ci(x: np.ndarray) -> tuple[float, float, float]:
@@ -38,8 +39,15 @@ def _ci(x: np.ndarray) -> tuple[float, float, float]:
     return float(np.mean(x)), float(np.percentile(x, 2.5)), float(np.percentile(x, 97.5))
 
 
-def main() -> None:
-    """Print Table 1 and render the observed-vs-fitted figure."""
+def main(nc_path: Path = DEFAULT_NC) -> None:
+    """Print Table 1 and render the observed-vs-fitted figure.
+
+    Parameters
+    ----------
+    nc_path : Path
+        Cached posterior netCDF to load. The figure is written alongside it with the same
+        stem (``<stem>.jpg``) so alternate parameterizations don't overwrite each other.
+    """
     long = pd.read_csv(CACHE / "model_ready_long.csv", parse_dates=["date"])
     panel = Panel.from_long(
         long,
@@ -52,7 +60,8 @@ def main() -> None:
     c_h, s_h = panel.scaling["hrv"]
     c_s, s_s = panel.scaling["speed"]
 
-    post = az.from_netcdf(CACHE / "runner_application_full.nc").posterior
+    post = az.from_netcdf(nc_path).posterior
+    fig_path = nc_path.with_suffix(".jpg")
 
     def flat(name: str) -> np.ndarray:
         """Stack chain/draw into one axis, dropping trailing size-1 dims."""
@@ -118,9 +127,16 @@ def main() -> None:
         ax.spines[["top", "right"]].set_visible(False)
     fig.align_ylabels((ax_p, ax_h))
     fig.tight_layout()
-    fig.savefig(FIG, dpi=600, format="jpg")
-    print(f"\nsaved figure -> {FIG}")
+    fig.savefig(fig_path, dpi=600, format="jpg")
+    print(f"\nsaved figure -> {fig_path}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--nc",
+        type=Path,
+        default=DEFAULT_NC,
+        help="cached posterior .nc to plot (default: runner_application_full.nc)",
+    )
+    main(parser.parse_args().nc)
