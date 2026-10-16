@@ -1,10 +1,11 @@
 # `birm`: Bayesian Impulse-Response Modeling
 
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=1a5&label=pypi" alt="pypi">
-  <img src="https://github.com/hrmerrill/birm/actions/workflows/ci.yml/badge.svg?style=flat-square" alt="CI">
+  <a href="https://pypi.org/project/birm/"><img src="https://img.shields.io/pypi/v/birm?style=flat-square&color=1a5&label=pypi" alt="pypi"></a>
+  <a href="https://hrmerrill.github.io/birm/"><img src="https://github.com/hrmerrill/birm/actions/workflows/ci.yml/badge.svg?style=flat-square" alt="CI"></a>
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/coverage.svg" alt="coverage">
   <img src="https://raw.githubusercontent.com/hrmerrill/birm/badges/interrogate_badge.svg" alt="docstring coverage">
+  <a href="https://doi.org/10.5281/zenodo.23424968"><img src="https://zenodo.org/badge/1414680491.svg" alt="DOI"></a>
 </p>
 
 ## About
