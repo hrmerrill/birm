@@ -61,7 +61,7 @@ imputing some missing training loads).
 and test weakly- versus moderately-informed Bayesian priors. However, they drop the physiological
 constraint $\theta > 1$ and use performance measurements from short-track speed skaters previously
 demonstrated to be low-signal (average $R^2 \approx 0.20$) via [alternative machine learning methods](https://www.nature.com/articles/s41598-022-05392-8). Furthermore, their MCMC traceplots
-demonstrate a single stuck chain, indicative of a poorly tuned sampler rather than model issues.
+demonstrate a single stuck chain, which may be indicative of a poorly tuned sampler rather than model issues.
 They conclude that the impulse response model presents major dysfunctions, though their conclusion
 rests on an estimate of a posterior distribution that did not converge, and on cross-validation
 applied to a small set of performance measurements (roughly 35 performances from nine athletes,
@@ -75,7 +75,7 @@ combinations in a physiologically reasonable space. To motivate similar reparame
 the decay terms, we represent $k_G/k_F$ in terms of decay rates and the time it takes the impulse
 response to recover $t_r$ and peak $t_p$:
 
-$$k_G/k_F = (\tau_F/\tau_G)^{\left(\frac{1}{t_p/t_r} - 1\right)} $$
+$$k_G/k_F = (\tau_F/\tau_G)^{\left(\frac{1}{t_p/t_r - 1}\right)} $$
 
 This satisfies the constraint $k_G/k_F > 1$ either when $\tau_F > \tau_G$ and $t_p > t_r$,
 or when $\tau_F < \tau_G$ and $t_p < t_r$. The former is the physiologically reasonable
@@ -97,7 +97,8 @@ It can be shown via Taylor expansion that
 $$\frac{1}{\log(2 - e^{-1/\tau_G})} = \tau_G + 1 + \mathcal{O}(1/\tau_G^2)$$
 
 and therefore admissibility $a_c$ approximately satisfies the condition $a_c > 1$ when
-$\tau_F > \tau_G + 1$. BIRM therefore uses the following parameterization and priors:
+$\tau_F > \tau_G + 1$. BIRM therefore provides the following two parameterizations:
+the `informed` version is
 
 $$k_G = (\phi + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
 
@@ -107,8 +108,16 @@ $$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
 
 which produce posterior estimates which satisfy the constraints $k_G/k_F > 1$ and
 $\tau_F > \tau_G + 1$ with certainty. Note that $k_G/k_F > 1$ and the (approximately) implied
-$a_c > 1$ is weaker than the admissibility condition $k_G/k_F > a_c$; we are only motivating
-a prior rather than strictly imposing $k_G/k_F > a_c$ because it can bias parameter estimates from
+$a_c > 1$ is weaker than the admissibility condition $k_G/k_F > a_c$. The `admissible` version
+imposes the stronger constraint such that posterior admissibility is certain:
+
+$$k_G = (\phi + a_c) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
+
+$$\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),$$
+
+$$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
+
+Note that strictly imposing $k_G/k_F > a_c$ can bias parameter estimates from
 athletes who have not yet reached peak performance.
 
 ## Multivariate Inputs and Outputs
