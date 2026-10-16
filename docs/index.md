@@ -64,8 +64,8 @@ idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 import arviz as az
 
 az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G"], ci_prob=0.95)  # mean, 95% CI, r_hat
-R_mean = idata.posterior["R"].mean(("chain", "draw"))          # posterior-mean R_t trajectory
-idata.to_netcdf("fit.nc")                                     # cache for later reuse
+R_mean = idata.posterior["R"].mean(("chain", "draw"))  # posterior-mean R_t trajectory
+idata.to_netcdf("fit.nc")  # cache for later reuse
 ```
 
 ---
