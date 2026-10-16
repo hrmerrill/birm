@@ -78,7 +78,7 @@ show_missing = true
 [tool.bumpversion]
 current_version = "0.1.0"
 commit = true
-tag = true
+tag = false
 message = "chore: bump version {current_version} → {new_version}"
 
 [[tool.bumpversion.files]]
