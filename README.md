@@ -71,7 +71,19 @@ model = IRModel(
 idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 ```
 
-(TODO: Examples of what to do with `idata`.)
+`idata` is an ArviZ `InferenceData`. Summarize parameters, check convergence, or pull the
+shared impulse-response stock `R_t`:
+
+```python
+import arviz as az
+
+az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G"], ci_prob=0.95)  # mean, 95% CI, r_hat
+az.plot_trace(idata, var_names=["k_F", "tau_F"])               # convergence diagnostics
+
+R = idata.posterior["R"]                                       # (chain, draw, T) latent stock
+R_mean = R.mean(("chain", "draw"))                             # posterior-mean trajectory
+idata.to_netcdf("fit.nc")                                     # cache for later reuse
+```
 
 See the [docs](https://hrmerrill.github.io/birm/examples/) for the full model reference.
 

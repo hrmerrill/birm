@@ -155,7 +155,19 @@ Metric(
 idata = model.fit(panel, sampler=dict(draws=1000, tune=2000, seed=0))
 ```
 
-(TODO: show how to use `idata`.)
+`idata` is an ArviZ `InferenceData` holding the posterior draws. Inspect parameters, check
+convergence, and recover the latent impulse-response stock `R_t`:
+
+```python
+import arviz as az
+
+az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G"], ci_prob=0.95)  # mean, 95% CI, r_hat
+az.plot_trace(idata, var_names=["k_F", "tau_F"])               # convergence diagnostics
+
+R = idata.posterior["R"]                                       # (chain, draw, T) latent stock
+lo, mid, hi = R.quantile([0.025, 0.5, 0.975], dim=("chain", "draw"))  # 95% credible band
+idata.to_netcdf("fit.nc")                                     # cache for later reuse
+```
 
 ### Overriding priors
 
