@@ -143,6 +143,24 @@ def test_direct_parameterization_samples_raw_params(fatigue: str) -> None:
     assert ("tau_v" in free) == (fatigue == "busso")
 
 
+def test_admissible_parameterization_floors_gain_at_a_c() -> None:
+    """``admissible`` keeps the reparam margins but derives k_G = (a_c + theta) k_F."""
+    spec = IRModel(
+        load=Load("w"),
+        fitness="banister",
+        fatigue="banister",
+        metrics=(Metric("hrv", ar1=True), Metric("speed")),
+        parameterization="admissible",
+    )
+    built = spec.build_model(_panel())
+    names = _named(built)
+    free = {v.name for v in built.free_RVs}
+    # Same reparameterized structure as ``informed``: margins sampled, k_G/tau_F derived.
+    assert {"R", "k_F", "k_G", "tau_F", "tau_G", "theta", "lambda_f", "admiss"} <= names
+    assert {"k_F", "theta", "lambda_f", "tau_G"} <= free
+    assert {"k_G", "tau_F"}.isdisjoint(free)  # derived deterministics, not free RVs
+
+
 def test_unknown_parameterization_rejected() -> None:
     """An unrecognized parameterization raises ValueError at construction."""
     with pytest.raises(ValueError, match="parameterization"):

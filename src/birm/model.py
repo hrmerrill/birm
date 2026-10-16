@@ -12,6 +12,7 @@ import pytensor.tensor as pt
 
 from birm.core import (
     admissibility,
+    admissible_fatigue_gain,
     fatigue_gain,
     fatigue_timescale,
     fitness_timescale,
@@ -25,7 +26,7 @@ from birm.data import Panel
 FITNESS = ("banister", "ceddia_periodize", "ceddia_taper", "ceddia")
 FATIGUE = ("banister", "busso", "none")
 LINKS = ("identity", "log", "logit")
-PARAMETERIZATIONS = ("informed", "direct")
+PARAMETERIZATIONS = ("informed", "admissible", "direct")
 
 # Default prior hyperparameters. Scales marked ``* spread`` are multiplied by the densest
 # or per-metric response spread so gains stay O(1) whether or not the panel was standardized.
@@ -183,10 +184,13 @@ class IRModel:
     priors : dict[str, Prior]
         Optional overrides for named model parameters (e.g. ``k_p``, ``k_a``, ``tau_v``).
     parameterization : str
-        Latent-stock prior geometry; one of ``informed`` or ``direct``. ``informed`` (default)
-        samples the identifiable reparameterized margins ($\theta, \lambda_F, \lambda_G$) so the
-        gain ratio and timescale ordering $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with
-        certainty (off the $\tau_F = \tau_G$ ridge). ``direct`` instead samples $k_F$, $k_G$,
+        Latent-stock prior geometry; one of ``informed``, ``admissible``, or ``direct``.
+        ``informed`` (default) samples the identifiable reparameterized margins
+        ($\theta, \lambda_F, \lambda_G$) so the gain ratio and timescale ordering
+        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty (off the
+        $\tau_F = \tau_G$ ridge). ``admissible`` is identical but floors the gain ratio at the
+        Ceddia (2026) admissibility metric $a_c$ via $k_G = (a_c + \theta) k_F$, so
+        $P(k_G/k_F > a_c) = 1$ in the posterior. ``direct`` instead samples $k_F$, $k_G$,
         $\tau_F$, $\tau_G$ (and Busso $\tau_v$) independently from weakly-informative
         ``HalfNormal``/``LogNormal`` priors over wide ranges, with no ordering or gain-ratio
         constraint -- the ill-conditioned baseline the reparameterization is designed to fix.
@@ -342,9 +346,11 @@ class IRModel:
         r"""Sample the identifiable reparameterized stock parameters.
 
         Samples $k_F$ and the non-negative margins ($\theta, \lambda_F, \lambda_G$), then derives
-        $k_G = (\theta + 1) k_F$, $\tau_F = 1 + \tau_G + \lambda_F$, and (Busso)
+        $k_G$, $\tau_F = 1 + \tau_G + \lambda_F$, and (Busso)
         $\tau_G = \tau_v + \lambda_G$ as ``Deterministic``s so the ordering
-        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty.
+        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty. The gain is
+        $k_G = (\theta + 1) k_F$ under ``informed`` and $k_G = (a_c + \theta) k_F$ under
+        ``admissible`` (flooring the ratio at the admissibility metric $a_c$).
 
         Parameters
         ----------
@@ -375,7 +381,10 @@ class IRModel:
         k_G: Any = 0.0
         if self.fatigue != "none":
             theta = _rv(self.priors, "theta", "LogNormal", mu=np.log(_THETA[0]), sigma=_THETA[1])
-            k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
+            if self.parameterization == "admissible":
+                k_G = pm.Deterministic("k_G", admissible_fatigue_gain(k_F, theta, tau_F, tau_G))
+            else:
+                k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
         return k_F, tau_F, k_G, tau_G, tau_v
 
     def _stock_params_direct(self, scale: float) -> tuple[Any, Any, Any, Any, Any]:

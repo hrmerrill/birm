@@ -12,6 +12,9 @@ model off the singular ridge:
   timescale strictly fastest, giving the ordered $\tau_v < \tau_G < \tau_F$.
 - [fatigue_gain][] — $k_G = (\theta + 1) k_F$ floors the gain ratio above one, hard
   enforcing $k_G > k_F$ (Peng 2024).
+- [admissible_fatigue_gain][] — $k_G = (a_c + \theta) k_F$ floors the gain ratio at the
+  Ceddia (2026) admissibility metric $a_c$ instead of one, hard enforcing
+  $P(k_G/k_F > a_c) = 1$.
 
 These are pure arithmetic transforms of already-sampled parameters: the non-negative margins
 ($\lambda_F, \lambda_G, \theta$) carry ``HalfNormal`` priors in the model layer, which is
@@ -22,6 +25,8 @@ diagnostics) or on PyTensor variables (inside the model graph).
 from __future__ import annotations
 
 from typing import Any
+
+from birm.core.admissibility import admissibility_threshold
 
 
 def fitness_timescale(tau_G: Any, lambda_f: Any) -> Any:
@@ -76,3 +81,31 @@ def fatigue_gain(k_F: Any, theta: Any) -> Any:
         The fatigue gain $k_G$, of the same kind as the inputs.
     """
     return (theta + 1.0) * k_F
+
+
+def admissible_fatigue_gain(k_F: Any, theta: Any, tau_F: Any, tau_G: Any) -> Any:
+    r"""Reparameterize the fatigue gain as $k_G = (a_c + \theta) k_F$.
+
+    Identical in structure to [fatigue_gain][], but floors the gain ratio at the Ceddia (2026)
+    admissibility metric $a_c = \frac{1 - e^{-1/\tau_G}}{e^{1/\tau_F} - 1}$ rather than at one.
+    With a non-negative margin $\theta$ this enforces $k_G / k_F = a_c + \theta \ge a_c$, so the
+    posterior probability of admissibility $P(k_G / k_F > a_c) = 1$. The fitness timescale keeps
+    the same $\tau_F = 1 + \tau_G + \lambda_F$ reparameterization.
+
+    Parameters
+    ----------
+    k_F : Any
+        Fitness gain $k_F$ (float or scalar tensor).
+    theta : Any
+        Non-negative gain-ratio margin $\theta$; $k_G / k_F = a_c + \theta$.
+    tau_F : Any
+        Fitness decay time constant $\tau_F$ in days (float or scalar tensor).
+    tau_G : Any
+        Fatigue decay time constant $\tau_G$ in days (float or scalar tensor).
+
+    Returns
+    -------
+    Any
+        The fatigue gain $k_G$, of the same kind as the inputs.
+    """
+    return (admissibility_threshold(tau_F, tau_G) + theta) * k_F

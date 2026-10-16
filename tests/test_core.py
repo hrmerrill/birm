@@ -180,6 +180,18 @@ def test_reparam_fatigue_gain_floors_ratio() -> None:
     assert fatigue_gain(0.1, 3.0) > 0.1
 
 
+def test_reparam_admissible_fatigue_gain_floors_at_a_c() -> None:
+    """k_G = (a_c + theta) k_F enforces k_G / k_F >= a_c for theta >= 0."""
+    from birm.core.admissibility import admissibility_threshold
+    from birm.core.reparam import admissible_fatigue_gain
+
+    k_F, tau_F, tau_G = 0.1, 40.0, 10.0
+    a_c = admissibility_threshold(tau_F, tau_G)
+    assert admissible_fatigue_gain(k_F, 0.0, tau_F, tau_G) == pytest.approx(a_c * k_F)
+    assert admissible_fatigue_gain(k_F, 0.5, tau_F, tau_G) == pytest.approx((a_c + 0.5) * k_F)
+    assert admissible_fatigue_gain(k_F, 0.0, tau_F, tau_G) / k_F >= a_c
+
+
 def test_admissibility_matches_formula() -> None:
     """The admissibility margin matches its closed form (numpy inputs -> numpy out)."""
     from birm.core.admissibility import admissibility

@@ -10,13 +10,19 @@ from birm.core.observation import (
     observation_mean,
     orthogonalize,
 )
-from birm.core.reparam import fatigue_gain, fatigue_timescale, fitness_timescale
+from birm.core.reparam import (
+    admissible_fatigue_gain,
+    fatigue_gain,
+    fatigue_timescale,
+    fitness_timescale,
+)
 from birm.core.stock import impulse_response
 
 __all__ = [
     "LINKS",
     "admissibility",
     "admissibility_threshold",
+    "admissible_fatigue_gain",
     "apply_inverse_link",
     "apply_link",
     "fatigue_gain",
