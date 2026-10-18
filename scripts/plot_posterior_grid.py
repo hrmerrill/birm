@@ -187,7 +187,7 @@ def _print_table2(
         )
     )
     r2_cells = [f"{m:.2f} ({lo:.2f}, {hi:.2f})" for m, lo, hi in (r2[k] for k in keys)]
-    print(row(r"$R^2$ (95\% CI)", r2_cells))
+    print(row(r"$Y_{0,t}$ $R^2$ ($95\%$ CI)", r2_cells))
 
 
 def _recovery_peak(d: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
