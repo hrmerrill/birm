@@ -13,6 +13,7 @@ Run::
 from __future__ import annotations
 
 import argparse
+from itertools import zip_longest
 from pathlib import Path
 
 import matplotlib  # ty: ignore[unresolved-import]
@@ -83,18 +84,27 @@ def main(nc_path: Path = DEFAULT_NC) -> None:
         ("$\\tau_G$", tau_G),
         ("$\\alpha_0$", alpha_perf),
         ("$\\alpha_1$", alpha_hrv),
+        ("$\\gamma_0$", gamma_perf),
         ("$\\beta_0$", beta_perf),
         ("$\\beta_1$", beta_hrv),
-        ("$\\gamma_0$", gamma_perf),
         ("$\\sigma^{2}_{0,\\epsilon}$", sig2_perf),
         ("$\\sigma^{2}_{1,\\epsilon}$", sig2_hrv),
         ("$\\sigma^{2}_{1,u}$", flat("sigma_u_hrv") ** 2),
         ("$\\rho_{1,u}$", rho_hrv),
     ]
     print("\n=== Table 1: posterior mean (95% CI) ===")
-    for label, draws in rows:
-        m, lo, hi = _ci(draws)
-        print(f"{label} & {m:.3f} ({lo:.3f}, {hi:.3f}) \\\\")
+
+    def cell(row: tuple[str, np.ndarray] | None) -> str:
+        """Format a ``(label, draws)`` pair as ``label & mean (lo, hi)`` or empty."""
+        if row is None:
+            return " & "
+        m, lo, hi = _ci(row[1])
+        return f"{row[0]} & {m:.3f} ({lo:.3f}, {hi:.3f})"
+
+    # gamma_0 (index 6) ends the left column; beta_0 (index 7) starts the right.
+    left, right = rows[:7], rows[7:]
+    for lrow, rrow in zip_longest(left, right):
+        print(f"{cell(lrow)} & {cell(rrow)} \\\\")
 
     # --- structural trends (alpha + gamma * R, back-transformed to raw units) ---
     R = flat("R")  # (draws, T)
