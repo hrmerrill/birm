@@ -13,6 +13,7 @@ import pytensor.tensor as pt
 from birm.core import (
     admissibility,
     admissible_fatigue_gain,
+    apply_link,
     fatigue_gain,
     fatigue_timescale,
     fitness_timescale,
@@ -33,7 +34,7 @@ PARAMETERIZATIONS = ("informed", "admissible", "direct")
 # Any of these is overridable per-name via ``IRModel.priors``.
 _TAU_G = (11.0, 0.3)  # LogNormal(log mu, sigma) days, fatigue timescale (non-busso)
 _TAU_V = (3.0, 0.3)  # LogNormal(log mu, sigma) days, Busso accumulation timescale
-_LAMBDA_F = (33.0, 0.4)  # LogNormal(log mu, sigma) days, margin: tau_F = 1 + tau_G + lambda_f
+_LAMBDA_F = (33.0, 0.3)  # LogNormal(log mu, sigma) days, margin: tau_F = 1 + tau_G + lambda_f
 _LAMBDA_G = (8.0, 0.4)  # LogNormal(log mu, sigma) margin: tau_G = tau_v + lambda_g (busso)
 _THETA = (4.0, 0.5)  # LogNormal(log mu, sigma) driver: k_G = (theta + 1) k_F, r = theta + 1
 _K_F_FACTOR = 0.1  # HalfNormal(k_F) sigma = factor * densest spread
@@ -50,6 +51,19 @@ _TAU_V_DIRECT = (3.0, 1.0)  # LogNormal(log mu, sigma) days, Busso accumulation 
 _ALPHA_FACTOR = 3.0  # Normal(alpha) sigma = factor * metric spread
 _GAMMA = (1.0, 1.0)  # Normal(mu, sigma) for estimated readout scales
 _PHI_U = (0.0, 1.0)  # Uniform(lower, upper) for the AR(1) coef
+
+# Discrete readout-shift (``offset``) test: a metric's stock is read at r_{t-d}, with ``d`` an
+# integer in [-_OFFSET_MAX, _OFFSET_MAX] days marginalized out via logsumexp (so the continuous
+# sampler is untouched). The prior over the lags is a 0-centered discrete Gaussian with scale
+# _OFFSET_SCALE days, which shrinks the large-|d| basin a flat prior would leave open. See
+# IRModel._metric_offset.
+_OFFSET_MAX = 14
+_OFFSET_SCALE = 7.0  # days, sd of the 0-centered discrete Gaussian prior on the lag
+# Causal restriction: the shared stock r_t is a causal convolution of past loads, so reading it at
+# r_{t-d} with d<0 (i.e. r_{t+|d|}) lets a response depend on *future* training. With
+# _OFFSET_CAUSAL the lag support is clipped to d >= 0 (a half-Gaussian prior), keeping the readout
+# strictly causal; set False to restore the symmetric [-_OFFSET_MAX, _OFFSET_MAX] test.
+_OFFSET_CAUSAL = True
 
 # Default sampler settings. The near-unit-root AR(1) residual gives a funnel-like geometry that
 # needs the nutpie NUTS backend with long tuning and a high target-accept to mix; ``progressbar`` is
@@ -139,6 +153,11 @@ class Metric:
     gamma : float, optional
         Fixed scale $\gamma^{(j)}$. If ``None`` the densest metric is auto-pinned to
         $\gamma \equiv 1$ and the rest are estimated.
+    offset : bool
+        Whether to read this metric's stock at a shifted time $r_{t-d}$ with an integer lag
+        $d$ (support $\{0,\dots,14\}$ if causal, else $[-14,14]$) under a 0-centered discrete
+        Gaussian prior, marginalized out via ``logsumexp``. The shift applies to the stock term
+        only; any ``ar1`` residual and exogenous terms stay contemporaneous.
     """
 
     name: str
@@ -147,6 +166,7 @@ class Metric:
     ar1: bool = False
     intercept: bool = True
     gamma: float | None = None
+    offset: bool = False
 
     def __post_init__(self) -> None:
         """Validate the link choice.
@@ -336,9 +356,9 @@ class IRModel:
         # gains and timescales stay identified. Net R alone is insufficient: u could still absorb
         # the fatigue direction orthogonal to R and strand tau_G at its prior.
         grid_len = len(drive)
-        cols = [pt.ones(grid_len), _ar1(pt.exp(-1.0 / tau_F), drive)]
+        cols = [pt.ones(grid_len), _ar1(pt.exp(-1.0 / tau_F), drive, exclude_current=True)]
         if self.fatigue != "none":
-            cols.append(_ar1(pt.exp(-1.0 / tau_G), drive))
+            cols.append(_ar1(pt.exp(-1.0 / tau_G), drive, exclude_current=True))
         ortho = pt.stack(cols, axis=1)
         return pm.Deterministic("R", stock), ortho
 
@@ -452,6 +472,10 @@ class IRModel:
         center = float(np.median(values))
         spread = float(np.std(values)) or 1.0
 
+        if metric.offset:
+            self._metric_offset(data, metric, stock, ortho, grid_len, center, spread, dense)
+            return
+
         alpha: Any = 0.0
         if metric.intercept:
             alpha = _rv(
@@ -492,6 +516,109 @@ class IRModel:
         )
         sigma = _rv(priors, f"sigma_{metric.name}", "HalfNormal", sigma=spread)
         pm.Normal(f"obs_{metric.name}", mu=mean, sigma=sigma, observed=values)
+
+    def _metric_offset(
+        self,
+        data: Any,
+        metric: Metric,
+        stock: Any,
+        ortho: Any,
+        grid_len: int,
+        center: float,
+        spread: float,
+        dense: str,
+    ) -> None:
+        r"""Attach a readout-shift metric: $r_{t-d}$ with the integer lag $d$ marginalized out.
+
+        For each candidate lag $d$ the channel mean
+        reads the shared stock at $r_{t-d}$, and the per-lag Gaussian log-likelihoods are combined
+        with a 0-centered discrete Gaussian prior (scale `_OFFSET_SCALE` days) via ``logsumexp``
+        into one ``pm.Potential`` -- so no discrete variable enters the sampler and the default
+        NUTS path is preserved. The lag support is $d \in \{0, \dots, M\}$ when `_OFFSET_CAUSAL`
+        (reading $r_{t+|d|}$ with $d<0$ would make the response depend on future loads, since the
+        stock is a causal convolution), else the symmetric $\{-M, \dots, M\}$ ($M$ = `_OFFSET_MAX`).
+        To avoid an edge/support bias
+        (shifts that drop more boundary rows would otherwise look artificially better), the
+        likelihood is evaluated on the **common support**: only rows whose shifted index stays on
+        the grid for *every* candidate lag. The per-lag
+        responsibilities $P(d \mid y, \theta)$ and their mean $\mathbb{E}[d \mid y, \theta]$ are
+        recorded as deterministics for posterior recovery.
+
+        Parameters
+        ----------
+        data : Any
+            The [MetricData][birm.data.MetricData] for this metric (values, grid indices, exog).
+        metric : Metric
+            The metric spec (link, exog, ar1, intercept, gamma).
+        stock : Any
+            The shared ``R`` deterministic on the full grid.
+        ortho : Any
+            The AR(1) orthogonalization design $[\mathbf{1}, i_1, i_2]$ from [_stock][]; only used
+            when ``metric.ar1`` (the residual is orthogonalized against the *unshifted* design).
+        grid_len : int
+            Number of grid timesteps $T$.
+        center : float
+            Median of the metric's response, used to center the intercept prior.
+        spread : float
+            Spread of the metric's response, used to scale the priors.
+        dense : str
+            Name of the densest metric, auto-pinned to $\gamma \equiv 1$.
+        """
+        priors = self.priors
+        name = metric.name
+        idx = np.asarray(data.idx)
+        shifts = np.arange(0 if _OFFSET_CAUSAL else -_OFFSET_MAX, _OFFSET_MAX + 1)
+        lo = _OFFSET_MAX  # largest positive lag reads idx - _OFFSET_MAX, must stay >= 0
+        hi = grid_len - 1 + int(shifts.min())  # most negative lag reads idx - shifts.min()
+        keep = (idx >= lo) & (idx <= hi)
+        idx_v = idx[keep]
+        values_v = data.values[keep]
+        if len(idx_v) == 0:
+            raise ValueError(
+                f"metric {name!r}: offset=True leaves no rows on the common support [{lo}, {hi}]"
+            )
+
+        alpha: Any = 0.0
+        if metric.intercept:
+            alpha = _rv(priors, f"alpha_{name}", "Normal", mu=center, sigma=_ALPHA_FACTOR * spread)
+        if metric.gamma is not None:
+            gamma: Any = metric.gamma
+        elif name == dense:
+            gamma = 1.0
+        else:
+            gamma = _rv(priors, f"gamma_{name}", "Normal", mu=_GAMMA[0], sigma=_GAMMA[1])
+
+        exog_term: Any = 0.0
+        if metric.exog:
+            exog = np.column_stack([data.exog[c] for c in metric.exog])[keep]
+            beta = _rv(
+                priors, f"beta_{name}", "Normal", mu=0.0, sigma=spread, shape=len(metric.exog)
+            )
+            exog_term = pt.as_tensor_variable(exog) @ beta
+        sigma = _rv(priors, f"sigma_{name}", "HalfNormal", sigma=spread)
+
+        # AR(1) residual (if any) is contemporaneous with the observation, so it is added at the
+        # observed rows and is shared across all candidate lags; only the stock read is shifted.
+        u_term: Any = 0.0
+        if metric.ar1:
+            u_term = self._ar1_residual(name, ortho, grid_len, spread)[idx_v]
+
+        # (n_shifts, n_rows); every entry is on-grid by the common-support filter above
+        gathered = idx_v[None, :] - shifts[:, None]
+        linked = apply_link(stock[gathered], metric.link)
+        mean = alpha + gamma * linked + (exog_term if metric.exog else 0.0) + u_term
+        resid = (values_v[None, :] - mean) / sigma
+        loglik = -0.5 * resid**2 - pt.log(sigma) - 0.5 * np.log(2.0 * np.pi)
+        log_prior = -0.5 * (shifts / _OFFSET_SCALE) ** 2  # 0-centered discrete Gaussian over lags
+        log_prior = log_prior - np.log(np.exp(log_prior).sum())
+        ll_shift = loglik.sum(axis=1) + log_prior
+        logm = pm.math.logsumexp(ll_shift)
+        pm.Potential(f"obs_{name}", logm)
+
+        resp = pt.exp(ll_shift - logm)
+        pm.Deterministic(f"offset_w_{name}", resp)
+        lags = pt.as_tensor_variable(shifts.astype(float))
+        pm.Deterministic(f"offset_d_{name}", (lags * resp).sum())
 
     def _ar1_residual(self, name: str, ortho: Any, grid_len: int, spread: float) -> Any:
         r"""Build the orthogonalized AR(1) residual $u^{(j)}$ on the full grid.
