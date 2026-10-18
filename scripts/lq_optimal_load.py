@@ -23,6 +23,7 @@ Run::
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib  # ty: ignore[unresolved-import]
@@ -102,8 +103,15 @@ def _lq_plan(a_F: float, a_G: float, k_F: float, k_G: float) -> tuple[np.ndarray
     return u, traj[:, 0], traj[:, 1], R
 
 
-def main() -> None:
-    """Run the posterior LQ sweep, print cost CIs, and render the plan figure."""
+def main(examples: int = 0) -> None:
+    """Run the posterior LQ sweep, print cost CIs, and render the plan figure.
+
+    Parameters
+    ----------
+    examples : int, default 0
+        Number of representative posterior draws to overlay as individual ``w`` schedules
+        and their IR trajectories. ``0`` shows only the 95% bands and medians.
+    """
     post = az.from_netcdf(NC).posterior
 
     # HRV scale (ms); the IR terms f, g, r read into HRV with unit gain, so multiplying by this
@@ -182,12 +190,21 @@ def main() -> None:
     ax_u.set_ylabel("Optimal load $w_t$")
     ax_u.spines[["top", "right"]].set_visible(False)
 
+    # representative example draws: even quantiles of total load span the posterior spread
+    ex = np.argsort(cum)[np.linspace(0, kept - 1, examples, dtype=int)] if examples else []
+    for i in ex:
+        ax_u.plot(days, U[i], color="C0", linewidth=0.6, alpha=0.7, zorder=4)
+
     ax_fg.axhline(0.0, color="0.7", linewidth=0.8, zorder=1)
     ax_fg.fill_between(days, lo_f, hi_f, color="0.6", alpha=0.35, linewidth=0, zorder=2)
     ax_fg.fill_between(days, lo_g, hi_g, color="0.6", alpha=0.35, linewidth=0, zorder=2)
     ax_fg.plot(days, mid_f, color="black", linewidth=1.2, zorder=4, label="Fitness")
     ax_fg.plot(days, mid_g, color="black", linewidth=1.2, linestyle="--", zorder=3, label="Fatigue")
     ax_fg.set_ylabel("IR stock (ms)")
+
+    for i in ex:
+        ax_fg.plot(days, Ff[i], color="C0", linewidth=0.6, alpha=0.7, zorder=5)
+        ax_fg.plot(days, Gg[i], color="C1", linewidth=0.6, alpha=0.7, linestyle="--", zorder=5)
     ax_fg.set_xlabel("Day of plan")
     ax_fg.legend(frameon=False, loc="upper left")
     ax_fg.spines[["top", "right"]].set_visible(False)
@@ -198,4 +215,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--examples",
+        type=int,
+        default=0,
+        help="number of representative posterior draws to overlay (default 0: bands + means only)",
+    )
+    main(**vars(parser.parse_args()))
