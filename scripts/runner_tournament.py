@@ -1,30 +1,31 @@
 r"""In-silico training-routine tournament for the amateur-runner application (Table 3).
 
-Forecasts the fitted impulse response ``r_t`` an additional 42 days (six weeks) under four
-competing training routines and reports, for each routine, the posterior probability that it
-produces the highest ``r_{T+42}`` -- the quantity the paper scores:
+Forecasts the fitted impulse response ``r_t`` an additional HORIZON days under three
+competing *static* training routines and reports, for each, the posterior probability that it
+maximizes predicted *performance* (running speed) on the target day -- the quantity the paper
+scores:
 
-    { P[ w = argmax_w r_{T+42}(w) ] }_{w in W}.
+    { P[ w = argmax_w Yhat_speed_{T+HORIZON}(w) ] }_{w in W},  W = {Placebo, Rest2, Rest4},
 
-Scoring is the noise-free impulse response on the 42nd forecast day (no exogenous, residual, or
-white-noise terms enter the score); residual/noise terms only drive the *adaptive* HRV routine's
-day-by-day decisions. Because the infeasible ``Max`` routine (HIGH load every day) deterministically
-maximizes ``r_{T+42}`` in this fitted model, the argmax is taken over the feasible set
-``W = {Placebo, TRA, HRV}`` (whose probabilities sum to 1) and ``Max`` is reported separately as the
-ceiling: the probability it exceeds every feasible routine. The four routines are:
+where the noise-free speed response is ``Yhat_speed = alpha_speed + gamma_speed * r_{T+HORIZON}``
+(no exogenous, residual, or white-noise terms enter the score). The three routines are:
 
 * ``Placebo`` -- rest every day (zero load), the detraining floor.
-* ``Max``     -- the infeasible HIGH-every-day routine.
-* ``TRA``     -- predefined periodization: a ``[LOW, HIGH, HIGH, LOW, HIGH, HIGH, REST]`` week.
-* ``HRV``     -- the Kiviniemi (2007) HRV-guided closed-loop controller, which simulates the full
-  HRV readout ``Y^HRV_t = alpha^HRV + r_t + beta^HRV w_{t-1} + u^HRV_t + eps^HRV_t`` each day
-  (de-standardized to raw HRV) and sets the next day's HIGH/LOW/REST from the morning ln-HRV.
+* ``Rest2``   -- a shared build block (the ``[LOW, HIGH, HIGH, LOW, HIGH, HIGH, REST]`` microcycle)
+  then a final sharpening block whose last key session is ``SHORT_REST`` days before the target,
+  i.e. ``SHORT_REST`` complete rest days precede the target.
+* ``Rest4``   -- the *same* build and sharpening block, but the last key session lands
+  ``LONG_REST`` days before the target (a longer pre-target recovery window). The two training
+  routines carry identical total load, so the comparison isolates the *recovery gap* before the
+  target, not volume: the fitness impulse peaks several days after a hard session (long ``tau_F``)
+  while fatigue clears in ~1 day (short ``tau_G``), so the posterior is genuinely uncertain about
+  how many rest days should precede the target.
 
 Reads the cached posterior ``cache/runner_application_full.nc`` (fit by
 ``fit_runner_application.py``) -- it does not refit -- and the panel scaling from
 ``cache/model_ready_long.csv``. For every posterior draw it warm-starts the two leaky integrators
-``i_F, i_G`` from the fitted end-of-data state, runs one rollout per routine (one *stochastic*
-rollout for HRV), reads ``r_{T+42}``, and counts argmax wins. Prints the LaTeX body for
+``i_F, i_G`` from the fitted end-of-data state, runs one rollout per routine, maps the final-day
+``r_{T+HORIZON}`` to predicted speed, and counts argmax wins. Prints the LaTeX body for
 ``\label{tab:Table3}``.
 
 Run from the birm repo::
@@ -48,7 +49,6 @@ FIT = CACHE / "runner_application_full.nc"
 DATA = CACHE / "model_ready_long.csv"
 
 HORIZON = 42  # forecast length (days)
-SEED = 0
 
 # Daily training-load levels in raw rTSS units (see paper / user spec).
 # Percentile from my data:
@@ -63,34 +63,23 @@ SEED = 0
 # │ 95th       │ 108.57 │
 # ├────────────┼────────┤
 # │ 99th       │ 130.66 │
-HIGH = 72  # a HIGH-intensity session; also Max's every-day load and TRA's high days
+HIGH = 72  # a HIGH-intensity ("key") session; also the build block's high days
 LOW_HIGH_RATIO = 0.592  # from the Kiviniemi paper
-# a LOW-intensity / recovery session; TRA's low days (50th pct of training-day loads)
+# a LOW-intensity / recovery session; the build block's low days (50th pct of training-day loads)
 LOW = HIGH * LOW_HIGH_RATIO
 REST = 0.0
 
-# Kiviniemi (2007) HRV-guided controller settings (Eur J Appl Physiol 101:743-751).
-HARD, EASY, RESTLAB = 2, 1, 0
-LOAD = {HARD: HIGH, EASY: LOW, RESTLAB: REST}
-BASE_WIN = 10  # rolling baseline window (days): reference = mean - SD
-TREND = 0.1  # ln-HRV two-day decreasing-trend trigger (ln ms^2)
-MAX_TRAIN = 9  # forced REST after this many successive training days
-MAX_HIGH = 2  # forced EASY after this many successive HARD days
-MAX_REST = 2  # forced EASY after this many successive REST days
+# All training routines share an identical build block then a fixed final "sharpening" block of
+# HIGH sessions; they differ ONLY in how many complete rest days fall between that block and the
+# target (the pre-target recovery gap). Because the build and the sharpening block are the same,
+# total volume is identical across routines -- the comparison isolates the recovery gap, not volume.
+TRA_WEEK = (LOW, HIGH, HIGH, LOW, HIGH, HIGH, REST)  # the periodization microcycle
+SHARPEN_SESSIONS = 2  # HIGH sessions in the final sharpening block
+SHORT_REST = 2  # last key session 2 days before the target (2 rest days precede it)
+LONG_REST = 4  # last key session 4 days before the target (near the fitness-impulse peak)
 
-ROUTINES = ("Placebo", "Max", "TRA", "HRV")
-FEASIBLE = ("Placebo", "TRA", "HRV")  # Max is the infeasible ceiling, excluded from the argmax
-PARAMS = (
-    "k_F",
-    "k_G",
-    "tau_F",
-    "tau_G",
-    "alpha_hrv",
-    "beta_hrv",
-    "phi_u_hrv",
-    "sigma_u_hrv",
-    "sigma_hrv",
-)
+ROUTINES = ("Placebo", f"Rest{SHORT_REST}", f"Rest{LONG_REST}")
+PARAMS = ("k_F", "k_G", "tau_F", "tau_G", "gamma_speed", "alpha_speed")
 
 
 def build_panel() -> Panel:
@@ -114,14 +103,13 @@ def build_panel() -> Panel:
     return panel
 
 
-def flat_posterior() -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]:
+def flat_posterior() -> tuple[dict[str, np.ndarray], np.ndarray]:
     """Load the cached posterior and flatten chains x draws.
 
     Returns
     -------
-    tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]
-        A dict of flat ``(n_draws,)`` parameter arrays (``beta_hrv`` squeezed to scalar), the
-        fitted stock ``R`` as ``(n_draws, T)``, and the AR(1) residual ``u_hrv`` as
+    tuple[dict[str, np.ndarray], np.ndarray]
+        A dict of flat ``(n_draws,)`` parameter arrays and the fitted stock ``R`` as
         ``(n_draws, T)``.
     """
     post = az.from_netcdf(FIT).posterior
@@ -129,12 +117,9 @@ def flat_posterior() -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]:
     for name in PARAMS:
         arr = post[name].values
         flat[name] = arr.reshape(arr.shape[0] * arr.shape[1], *arr.shape[2:])
-    flat["beta_hrv"] = flat["beta_hrv"][:, 0]  # single exog (load_prev)
     r = post["R"].values
     r = r.reshape(r.shape[0] * r.shape[1], r.shape[2])
-    u = post["u_hrv"].values
-    u = u.reshape(u.shape[0] * u.shape[1], u.shape[2])
-    return flat, r, u
+    return flat, r
 
 
 def warmstart(drive: np.ndarray, flat: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
@@ -172,7 +157,7 @@ def forecast_static(
     flat: dict[str, np.ndarray],
     load_mean: float,
 ) -> np.ndarray:
-    """Final-day ``r_{T+42}`` for a fixed load schedule, vectorized across draws.
+    """Final-day ``r_{T+HORIZON}`` for a fixed load schedule, vectorized across draws.
 
     Parameters
     ----------
@@ -188,7 +173,7 @@ def forecast_static(
     Returns
     -------
     np.ndarray
-        ``r`` on the 42nd forecast day for every draw, ``(n_draws,)``.
+        ``r`` on the HORIZONnd forecast day for every draw, ``(n_draws,)``.
     """
     a_f, a_g = np.exp(-1.0 / flat["tau_F"]), np.exp(-1.0 / flat["tau_G"])
     i_f, i_g = i_f.copy(), i_g.copy()
@@ -201,175 +186,65 @@ def forecast_static(
     return r
 
 
-def _rolling_ref(ln_hrv: list[float], t: int) -> float:
-    """Kiviniemi reference = mean - SD over the last ``BASE_WIN`` ln-HRV values through day ``t``.
-
-    Parameters
-    ----------
-    ln_hrv : list[float]
-        Morning ln-HRV series (seeded with real baseline nights).
-    t : int
-        Absolute index of the current day.
+def build_block() -> np.ndarray:
+    """Build the shared training block: the TRA microcycle tiled over the first half of the horizon.
 
     Returns
     -------
-    float
-        The daily reference band value.
+    np.ndarray
+        Raw-rTSS daily loads for days ``0 .. HORIZON//2 - 1``.
     """
-    lo = max(0, t - BASE_WIN + 1)
-    win = ln_hrv[lo : t + 1]
-    if len(win) < 2:
-        return win[-1]
-    return float(np.mean(win) - np.std(win, ddof=1))
+    half = HORIZON // 2
+    tiled = (list(TRA_WEEK) * (half // len(TRA_WEEK) + 1))[:half]
+    return np.array(tiled, dtype=float)
 
 
-def _significant_decrease(ln_hrv: list[float], t: int) -> bool:
-    """Whether day ``t`` is below the rolling band or in a >``TREND`` two-day downtrend.
+def routine_loads(rest_days: int) -> np.ndarray:
+    """Build a training routine: the shared build, then a sharpening block ``rest_days`` out.
+
+    The final ``SHARPEN_SESSIONS`` HIGH sessions end ``rest_days`` days before the target; the
+    remaining days are rest. Total volume is independent of ``rest_days`` -- only the timing of
+    the final block changes -- so routines differ purely in the pre-target recovery gap.
 
     Parameters
     ----------
-    ln_hrv : list[float]
-        Morning ln-HRV series.
-    t : int
-        Absolute index of the current day.
-
-    Returns
-    -------
-    bool
-        True if the HRV decrease is significant per Kiviniemi (2007).
-    """
-    below = ln_hrv[t] < _rolling_ref(ln_hrv, t)
-    trend = (
-        t >= 2 and (ln_hrv[t - 1] - ln_hrv[t] > TREND) and (ln_hrv[t - 2] - ln_hrv[t - 1] > TREND)
-    )
-    return bool(below or trend)
-
-
-def kiviniemi_decide(ln_hrv: list[float], presc: list[int], t: int) -> int:
-    """Kiviniemi (2007) HRV-guided prescription for day ``t`` (HARD/EASY/REST).
-
-    Increased/unchanged HRV -> HARD; a significant decrease -> EASY; a further significant
-    decrease after an already-reduced (EASY) day -> REST. Caps: <=9 successive training days
-    force REST, <=2 successive HARD days force EASY, <=2 successive REST days force EASY.
-
-    Parameters
-    ----------
-    ln_hrv : list[float]
-        Morning ln-HRV series through day ``t`` (seeded with real baseline nights).
-    presc : list[int]
-        Forecast-day prescriptions already issued (days ``< t`` within the horizon).
-    t : int
-        Absolute index of the current day in ``ln_hrv``.
-
-    Returns
-    -------
-    int
-        One of ``HARD``, ``EASY``, ``RESTLAB``.
-    """
-    prev = presc[-MAX_TRAIN:]
-    if len(prev) >= MAX_TRAIN and all(x != RESTLAB for x in prev):
-        return RESTLAB
-    if _significant_decrease(ln_hrv, t):
-        base = RESTLAB if presc and presc[-1] == EASY else EASY
-    else:
-        base = HARD
-    if base == HARD and len(presc) >= MAX_HIGH and all(x == HARD for x in presc[-MAX_HIGH:]):
-        base = EASY
-    if base == RESTLAB and len(presc) >= MAX_REST and all(x == RESTLAB for x in presc[-MAX_REST:]):
-        base = EASY
-    return base
-
-
-def forecast_hrv(
-    i_f0: float,
-    i_g0: float,
-    r_end: float,
-    u0: float,
-    w_last: float,
-    hrv_seed: list[float],
-    p: dict[str, float],
-    scaling: dict,
-    rng: np.random.Generator,
-) -> float:
-    """One stochastic HRV-guided rollout; returns the 42nd-day ``r`` for this draw.
-
-    Morning (causal) convention: day ``t``'s decision sees the stock through yesterday. The full
-    HRV readout (stock + load-suppression + AR(1) residual + white noise) is simulated, mapped
-    back to raw HRV, and its ln feeds the controller's next decision; the chosen load then advances
-    the shared integrators.
-
-    Parameters
-    ----------
-    i_f0, i_g0 : float
-        Warm-start integrator states for this draw.
-    r_end : float
-        Fitted ``r`` on the last observed day (stock through yesterday for day 0).
-    u0 : float
-        AR(1) residual on the last observed day.
-    w_last : float
-        Last observed raw load (the ``load_prev`` exog for forecast day 0).
-    hrv_seed : list[float]
-        ln of the last ``BASE_WIN`` observed raw HRV nights, priming the baseline band.
-    p : dict[str, float]
-        Scalar posterior parameters for this draw.
-    scaling : dict
-        Panel scaling: ``load`` ``(0, load_mean)``, ``hrv`` ``(c, s)``, and ``hrv.load_prev``
-        ``(c, s)``.
-    rng : np.random.Generator
-        Random source for the residual and noise draws.
-
-    Returns
-    -------
-    float
-        ``r`` on the 42nd forecast day for this draw.
-    """
-    a_f, a_g = np.exp(-1.0 / p["tau_F"]), np.exp(-1.0 / p["tau_G"])
-    _, load_mean = scaling["load"]
-    c_hrv, s_hrv = scaling["hrv"]
-    c_lp, s_lp = scaling["hrv.load_prev"]
-
-    i_f, i_g, r_prev, u, w_prev = i_f0, i_g0, r_end, u0, w_last
-    ln_hrv = list(hrv_seed)
-    presc: list[int] = []
-    for _ in range(HORIZON):
-        u = p["phi_u_hrv"] * u + p["sigma_u_hrv"] * rng.standard_normal()
-        lp_std = (w_prev - c_lp) / s_lp
-        y_std = (
-            p["alpha_hrv"]
-            + r_prev
-            + p["beta_hrv"] * lp_std
-            + u
-            + p["sigma_hrv"] * rng.standard_normal()
-        )
-        y_raw = y_std * s_hrv + c_hrv
-        ln_hrv.append(float(np.log(max(y_raw, 1e-6))))
-        lab = kiviniemi_decide(ln_hrv, presc, len(ln_hrv) - 1)
-        w = LOAD[lab]
-        d = w / load_mean
-        i_f = a_f * i_f + d
-        i_g = a_g * i_g + d
-        r_prev = p["k_F"] * i_f - p["k_G"] * i_g
-        presc.append(lab)
-        w_prev = w
-    return r_prev
-
-
-def tra_loads() -> np.ndarray:
-    """Build the TRA schedule: a ``[LOW, HIGH, HIGH, LOW, HIGH, HIGH, REST]`` week over the horizon.
+    rest_days : int
+        Number of complete rest days between the last HIGH session and the target day.
 
     Returns
     -------
     np.ndarray
         Raw-rTSS daily loads, length ``HORIZON``.
     """
-    week = [LOW, HIGH, HIGH, LOW, HIGH, HIGH, REST]
-    return np.array((week * ((HORIZON // 7) + 1))[:HORIZON], dtype=float)
+    loads = np.zeros(HORIZON)
+    loads[: HORIZON // 2] = build_block()
+    end = HORIZON - 1 - rest_days  # index of the last key session
+    loads[end - SHARPEN_SESSIONS + 1 : end + 1] = HIGH
+    return loads
+
+
+def performance(r: np.ndarray, flat: dict[str, np.ndarray]) -> np.ndarray:
+    """Map the impulse response to the noise-free predicted (standardized) running speed.
+
+    Parameters
+    ----------
+    r : np.ndarray
+        Final-day impulse response ``r_{T+HORIZON}`` per draw, ``(n_draws,)``.
+    flat : dict[str, np.ndarray]
+        Flat posterior parameter arrays.
+
+    Returns
+    -------
+    np.ndarray
+        Predicted speed response ``alpha_speed + gamma_speed * r`` per draw, ``(n_draws,)``.
+    """
+    return flat["alpha_speed"] + flat["gamma_speed"] * r
 
 
 def _selfcheck(
     drive: np.ndarray, flat: dict[str, np.ndarray], r_fit: np.ndarray, load_mean: float
 ) -> None:
-    """Refutable checks: warm-start reconstructs the fitted ``R`` end state; Max beats Placebo.
+    """Refutable checks: warm-start reconstructs ``R``; the two routines are volume-matched.
 
     Parameters
     ----------
@@ -385,36 +260,33 @@ def _selfcheck(
     i_f, i_g = warmstart(drive, flat)
     r_recon = flat["k_F"] * i_f - flat["k_G"] * i_g
     assert np.allclose(r_recon, r_fit[:, -1], atol=1e-6), "warm-start != fitted R end state"
-    r_max = forecast_static(i_f, i_g, np.full(HORIZON, HIGH), flat, load_mean)
+    short, long = routine_loads(SHORT_REST), routine_loads(LONG_REST)
+    assert np.isclose(short.sum(), long.sum()), "the two routines should be volume-matched"
+    assert LONG_REST > SHORT_REST and long[-LONG_REST:].sum() == 0.0, "longer recovery gap expected"
+    r_high = forecast_static(i_f, i_g, np.full(HORIZON, HIGH), flat, load_mean)
     r_rest = forecast_static(i_f, i_g, np.zeros(HORIZON), flat, load_mean)
-    assert r_max.mean() > r_rest.mean(), "Max should beat Placebo in mean final-day r"
-    print("self-check OK (warm-start exact; Max > Placebo signal)")
+    assert performance(r_high, flat).mean() > performance(r_rest, flat).mean(), (
+        "HIGH-every-day should beat Placebo in mean predicted speed"
+    )
+    print("self-check OK (warm-start exact; routines volume-matched; HIGH > Placebo speed signal)")
 
 
 def win_probabilities(scores: dict[str, np.ndarray]) -> dict[str, float]:
-    """Per-routine win probability: argmax among the feasible routines, Max as the ceiling.
-
-    The infeasible ``Max`` routine deterministically maximizes ``r_{T+42}`` (HIGH load every day),
-    so it is excluded from the argmax to keep the feasible comparison informative; its reported
-    value is instead the probability it exceeds every feasible routine (the ceiling, typically
-    1.0). The ``FEASIBLE`` routines' probabilities form a proper argmax distribution summing to 1.
+    """Per-routine win probability: the argmax predicted-speed distribution over ``ROUTINES``.
 
     Parameters
     ----------
     scores : dict[str, np.ndarray]
-        Final-day ``r`` per routine, each ``(n_draws,)``.
+        Predicted final-day speed per routine, each ``(n_draws,)``.
 
     Returns
     -------
     dict[str, float]
-        Win probability per routine (``FEASIBLE`` entries sum to 1; ``Max`` is the ceiling).
+        Win probability per routine (entries sum to 1).
     """
-    stacked = np.vstack([scores[k] for k in FEASIBLE])
+    stacked = np.vstack([scores[k] for k in ROUTINES])
     winners = stacked.argmax(axis=0)
-    probs = {k: float(np.mean(winners == i)) for i, k in enumerate(FEASIBLE)}
-    best_feasible = stacked.max(axis=0)
-    probs["Max"] = float(np.mean(scores["Max"] > best_feasible))
-    return probs
+    return {k: float(np.mean(winners == i)) for i, k in enumerate(ROUTINES)}
 
 
 def latex_table(probs: dict[str, float]) -> str:
@@ -441,13 +313,12 @@ def latex_table(probs: dict[str, float]) -> str:
 
 def main() -> None:
     """Run the tournament over all posterior draws and print the Table 3 LaTeX body."""
-    rng = np.random.default_rng(SEED)
     panel = build_panel().standardize()
     scaling = panel.scaling
     _, load_mean = scaling["load"]
     drive = np.asarray(panel.load, dtype=float)
 
-    flat, r_fit, u = flat_posterior()
+    flat, r_fit = flat_posterior()
     n_draws = flat["k_F"].size
     print(f"fit={FIT.name}  draws={n_draws}  horizon={HORIZON}d  HIGH={HIGH} LOW={LOW}")
 
@@ -455,37 +326,20 @@ def main() -> None:
 
     i_f, i_g = warmstart(drive, flat)
 
-    scores = {k: np.empty(n_draws) for k in ROUTINES}
-    scores["Placebo"] = forecast_static(i_f, i_g, np.zeros(HORIZON), flat, load_mean)
-    scores["Max"] = forecast_static(i_f, i_g, np.full(HORIZON, HIGH), flat, load_mean)
-    scores["TRA"] = forecast_static(i_f, i_g, tra_loads(), flat, load_mean)
-
-    # Observed baseline band: ln of the last BASE_WIN real HRV nights (raw units).
-    hrv = panel.metrics["hrv"]
-    c_hrv, s_hrv = scaling["hrv"]
-    raw_hrv = hrv.values * s_hrv + c_hrv  # undo standardization, ordered by date
-    hrv_seed = list(np.log(np.maximum(raw_hrv[-BASE_WIN:], 1e-6)))
-    w_last = float(drive[-1] * load_mean)  # last observed raw load
-
-    for s in range(n_draws):
-        p = {k: float(flat[k][s]) for k in PARAMS}
-        scores["HRV"][s] = forecast_hrv(
-            float(i_f[s]),
-            float(i_g[s]),
-            float(r_fit[s, -1]),
-            float(u[s, -1]),
-            w_last,
-            hrv_seed,
-            p,
-            scaling,
-            rng,
-        )
+    r_final = {
+        ROUTINES[0]: forecast_static(i_f, i_g, np.zeros(HORIZON), flat, load_mean),
+        ROUTINES[1]: forecast_static(i_f, i_g, routine_loads(SHORT_REST), flat, load_mean),
+        ROUTINES[2]: forecast_static(i_f, i_g, routine_loads(LONG_REST), flat, load_mean),
+    }
+    scores = {k: performance(r, flat) for k, r in r_final.items()}
 
     probs = win_probabilities(scores)
 
-    print("\n--- P(routine = best r_{T+42}); Max = infeasible ceiling, feasible rows sum to 1 ---")
+    c_speed, s_speed = scaling["speed"]
+    print(f"\n--- P(routine = best predicted speed on day T+{HORIZON}) ---")
     for k in ROUTINES:
-        print(f"  {k:8s} {probs[k]:.3f}   mean r_42={scores[k].mean():+.3f}")
+        raw = scores[k].mean() * s_speed + c_speed
+        print(f"  {k:8s} {probs[k]:.3f}   mean speed={raw:+.3f}")
 
     print("\n% --- paste into \\label{tab:Table3} ---")
     print(latex_table(probs))
