@@ -106,4 +106,4 @@ def fitness_stock(
     if variant in ("ceddia_taper", "ceddia"):
         forcing = forcing / (1.0 + k_a * drive)
 
-    return _ar1(pt.exp(-1.0 / tau_F), forcing)
+    return _ar1(pt.exp(-1.0 / tau_F), forcing, exclude_current=True)

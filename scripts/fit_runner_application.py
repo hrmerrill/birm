@@ -4,11 +4,13 @@ Reads the model-ready tidy table produced by ``cache/_extract_runner_data.py`` a
 the two-response shared-stock impulse-response model from the paper:
 
     Y^perf_t = alpha^perf + gamma^perf r_t + beta^perf * wetbulb_t + eps^perf_t
-    Y^HRV_t  = alpha^HRV  +            r_t + beta^HRV  * w_{t-1}   + u^HRV_t + eps^HRV_t
+    Y^HRV_t  = alpha^HRV  +            r_t + beta^HRV  * w_t       + u^HRV_t + eps^HRV_t
 
 HRV is the densest outcome, so ``birm`` auto-pins its readout to gamma == 1; the
 performance (``speed``) readout scale gamma^perf is estimated. The AR(1) residual
-``u`` is carried on HRV only. The posterior is cached as a netCDF ``.nc`` file.
+``u`` is carried on HRV only. Overnight HRV is retimed to its training day in
+``cache/_extract_runner_data.py``, so its stock read is contemporaneous and ``w_t`` is the
+same-day load. The posterior is cached as a netCDF ``.nc`` file.
 
 Run from the birm repo with its own virtualenv (``netCDF4`` supplies the netCDF
 writer backend)::

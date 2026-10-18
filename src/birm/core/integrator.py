@@ -8,7 +8,9 @@ import pytensor
 import pytensor.tensor as pt
 
 
-def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
+def _ar1(
+    coef: Any, forcing: Any, x_init: float = 0.0, *, exclude_current: bool = False
+) -> pt.TensorVariable:
     r"""Realise the leaky recursion $x_t = \text{coef}\,x_{t-1} + \text{forcing}_t$.
 
     Uses an ``O(T)`` ``pytensor.scan`` rather than a dense ``O(T^2)`` geometric operator so the
@@ -23,6 +25,11 @@ def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
         Per-day forcing sequence, length ``T`` (array-like or tensor).
     x_init : float
         Initial state $x_{-1}$ before the first step.
+    exclude_current : bool
+        When ``True`` the same-day forcing is removed from each step, giving the strictly causal
+        $x_t = \sum_{s<t} \text{forcing}_s\, \text{coef}^{\,t-s}$ (the response at day $t$ depends
+        only on days *before* $t$). The default ``False`` keeps the inclusive $\sum_{s\le t}$ form
+        required by a genuine AR(1) latent process, whose current innovation must enter.
 
     Returns
     -------
@@ -50,10 +57,13 @@ def _ar1(coef: Any, forcing: Any, x_init: float = 0.0) -> pt.TensorVariable:
         return c * x_prev + f_t
 
     forcing = pt.as_tensor_variable(forcing)
-    return pytensor.scan(
+    stock = pytensor.scan(
         step,
         sequences=[forcing],
         outputs_info=[pt.constant(float(x_init)).astype(forcing.dtype)],
         non_sequences=[coef],
         return_updates=False,
     )
+    # Dropping the same-day term x_t - forcing_t turns the inclusive sum_{s<=t} into sum_{s<t}
+    # while preserving the e^{-(t-s)/tau} kernel (nearest past day t-1 keeps weight e^{-1/tau}).
+    return stock - forcing if exclude_current else stock

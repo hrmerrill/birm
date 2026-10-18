@@ -1,7 +1,7 @@
 # Agent Instructions and Code Conventions
 
 Python package implementing multiple Bayesian variants of the Banister impulse-response model for
-training and performance. Under construction.
+training and performance.
 
 ## Development workflow
 

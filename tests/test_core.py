@@ -31,6 +31,27 @@ def _leaky(forcing: np.ndarray, tau: float) -> np.ndarray:
     return out
 
 
+def _leaky_causal(forcing: np.ndarray, tau: float) -> np.ndarray:
+    """Strictly causal leaky integrator ``I_t = sum_{s<t} forcing_s e^{-(t-s)/tau}``.
+
+    The response at day ``t`` depends only on days strictly before ``t`` (the same-day forcing is
+    excluded), matching the documented ``sum_{s<t}`` stock convention.
+
+    Parameters
+    ----------
+    forcing : np.ndarray
+        Per-day forcing sequence.
+    tau : float
+        Decay time constant in days.
+
+    Returns
+    -------
+    np.ndarray
+        The strictly-past accumulated stock, same length as ``forcing``.
+    """
+    return _leaky(forcing, tau) - forcing
+
+
 @pytest.fixture
 def drive() -> np.ndarray:
     """Return a short training-load drive with rest days.
@@ -63,7 +84,7 @@ def fatigue(drive: np.ndarray) -> np.ndarray:
 def test_fatigue_banister_matches_oracle(drive: np.ndarray) -> None:
     """Banister fatigue equals ``k_G`` times the leaky load integral."""
     got = fatigue_stock(drive, k_G=1.5, tau_G=7.0, variant="banister").eval()
-    assert np.allclose(got, 1.5 * _leaky(drive, 7.0))
+    assert np.allclose(got, 1.5 * _leaky_causal(drive, 7.0))
 
 
 def test_fatigue_none_is_zero(drive: np.ndarray) -> None:
@@ -75,8 +96,8 @@ def test_fatigue_none_is_zero(drive: np.ndarray) -> None:
 
 def test_fatigue_busso_matches_oracle(drive: np.ndarray) -> None:
     """Busso fatigue re-forces the tau_G integral with the tau_v-accumulated gain."""
-    gain = _leaky(drive, 3.0)
-    expected = 1.5 * _leaky(gain * drive, 7.0)
+    gain = _leaky_causal(drive, 3.0)
+    expected = 1.5 * _leaky_causal(gain * drive, 7.0)
     got = fatigue_stock(drive, k_G=1.5, tau_G=7.0, variant="busso", tau_v=3.0).eval()
     assert np.allclose(got, expected)
 
@@ -96,7 +117,7 @@ def test_fatigue_unknown_variant(drive: np.ndarray) -> None:
 def test_fitness_banister_matches_oracle(drive: np.ndarray) -> None:
     """Banister fitness equals ``k_F`` times the leaky load integral."""
     got = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
-    assert np.allclose(got, _leaky(0.8 * drive, 40.0))
+    assert np.allclose(got, _leaky_causal(0.8 * drive, 40.0))
 
 
 @pytest.mark.parametrize("variant", ["ceddia_periodize", "ceddia_taper", "ceddia"])
@@ -115,7 +136,7 @@ def test_fitness_taper_matches_oracle(drive: np.ndarray) -> None:
     """Tapering divides the gain by ``1 + k_a w`` before integrating."""
     forcing = 0.8 * drive / (1.0 + 0.3 * drive)
     got = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="ceddia_taper", k_a=0.3).eval()
-    assert np.allclose(got, _leaky(forcing, 40.0))
+    assert np.allclose(got, _leaky_causal(forcing, 40.0))
 
 
 def test_fitness_periodize_matches_oracle(drive: np.ndarray, fatigue: np.ndarray) -> None:
@@ -125,7 +146,7 @@ def test_fitness_periodize_matches_oracle(drive: np.ndarray, fatigue: np.ndarray
     got = fitness_stock(
         drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=fatigue, k_p=0.5
     ).eval()
-    assert np.allclose(got, _leaky(forcing, 40.0))
+    assert np.allclose(got, _leaky_causal(forcing, 40.0))
 
 
 def test_periodize_without_fatigue_is_banister(drive: np.ndarray) -> None:

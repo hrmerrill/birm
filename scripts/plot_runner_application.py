@@ -13,6 +13,7 @@ Run::
 from __future__ import annotations
 
 import argparse
+from itertools import zip_longest
 from pathlib import Path
 
 import matplotlib  # ty: ignore[unresolved-import]
@@ -81,26 +82,43 @@ def main(nc_path: Path = DEFAULT_NC) -> None:
         ("$k_G$", k_G),
         ("$\\tau_F$", tau_F),
         ("$\\tau_G$", tau_G),
-        ("$\\alpha^{\\text{perf}}$", alpha_perf),
-        ("$\\alpha^{\\text{HRV}}$", alpha_hrv),
-        ("$\\beta^{\\text{perf}}$", beta_perf),
-        ("$\\beta^{\\text{HRV}}$", beta_hrv),
-        ("$\\gamma^{\\text{perf}}$", gamma_perf),
-        ("$\\rho^{\\text{HRV}}_u$", rho_hrv),
-        ("$\\sigma^{2\\text{perf}}_\\epsilon$", sig2_perf),
-        ("$\\sigma^{2\\text{HRV}}_\\epsilon$", sig2_hrv),
-        ("$\\sigma^{2\\text{HRV}}_u$", flat("sigma_u_hrv") ** 2),
+        ("$\\alpha_0$", alpha_perf),
+        ("$\\alpha_1$", alpha_hrv),
+        ("$\\gamma_0$", gamma_perf),
+        ("$\\beta_0$", beta_perf),
+        ("$\\beta_1$", beta_hrv),
+        ("$\\sigma^{2}_{0,\\epsilon}$", sig2_perf),
+        ("$\\sigma^{2}_{1,\\epsilon}$", sig2_hrv),
+        ("$\\sigma^{2}_{1,u}$", flat("sigma_u_hrv") ** 2),
+        ("$\\rho_{1,u}$", rho_hrv),
     ]
     print("\n=== Table 1: posterior mean (95% CI) ===")
-    for label, draws in rows:
-        m, lo, hi = _ci(draws)
-        print(f"{label} & {m:.3f} ({lo:.3f}, {hi:.3f}) \\\\")
+
+    def cell(row: tuple[str, np.ndarray] | None) -> str:
+        """Format a ``(label, draws)`` pair as ``label & mean (lo, hi)`` or empty."""
+        if row is None:
+            return " & "
+        m, lo, hi = _ci(row[1])
+        return f"{row[0]} & {m:.3f} ({lo:.3f}, {hi:.3f})"
+
+    # gamma_0 (index 6) ends the left column; beta_0 (index 7) starts the right.
+    left, right = rows[:7], rows[7:]
+    for lrow, rrow in zip_longest(left, right):
+        print(f"{cell(lrow)} & {cell(rrow)} \\\\")
 
     # --- structural trends (alpha + gamma * R, back-transformed to raw units) ---
     R = flat("R")  # (draws, T)
     trend_hrv = (alpha_hrv[:, None] + R) * s_h + c_h
     trend_perf = (alpha_perf[:, None] + gamma_perf[:, None] * R) * s_s + c_s
     dates = panel.grid
+    if R.shape[1] != len(dates):
+        raise SystemExit(
+            f"posterior grid T={R.shape[1]} != default panel grid T={len(dates)} "
+            f"({nc_path.name}). This script builds the panel from model_ready_long.csv; a "
+            "posterior fit on a re-timestamped/alternate grid cannot be overlaid on these dates. "
+            "Use a posterior fit on the default panel (e.g. runner_application_full.nc or "
+            "runner_application_offset_hrv.nc)."
+        )
 
     def band(ax: plt.Axes, trend: np.ndarray) -> None:
         """Draw posterior mean line and translucent 95% credible band."""
@@ -116,7 +134,7 @@ def main(nc_path: Path = DEFAULT_NC) -> None:
 
     ax_p.scatter(mm["date"], mm["mmgap"], s=14, color="black", zorder=3)
     band(ax_p, trend_perf)
-    ax_p.set_ylabel("Performance (m s$^{-1}$)")
+    ax_p.set_ylabel("Speed (m s$^{-1}$)")
 
     ax_h.scatter(hv["date"], hv["hrv"], s=6, color="0.3", zorder=3)
     band(ax_h, trend_hrv)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- bug fix: remove same-day integration of workout load
+- estimate response-specific offsets
+
 ## 0.1.0
 
 Initial release:
