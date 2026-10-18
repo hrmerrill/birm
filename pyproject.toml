@@ -71,10 +71,6 @@ source = ["birm"]
 [tool.coverage.report]
 show_missing = true
 
-# ---------------------------------------------------------------------------
-# bump-my-version
-# ---------------------------------------------------------------------------
-
 [tool.bumpversion]
 current_version = "0.1.0"
 commit = true
