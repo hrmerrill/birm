@@ -73,7 +73,8 @@ def fatigue_stock(
         if tau_v is None:
             raise ValueError("busso fatigue requires tau_v (the third, fastest timescale)")
         # k_G(s)/k_G accumulated over tau_v, then re-forced into the tau_G integral as k_G(s)*w_s.
-        gain = _ar1(pt.exp(-1.0 / tau_v), drive)
-        return k_G * _ar1(pt.exp(-1.0 / tau_G), gain * drive)
+        # Both integrals are strictly causal (sum_{s<t}): the stock responds only to prior days.
+        gain = _ar1(pt.exp(-1.0 / tau_v), drive, exclude_current=True)
+        return k_G * _ar1(pt.exp(-1.0 / tau_G), gain * drive, exclude_current=True)
 
-    return k_G * _ar1(pt.exp(-1.0 / tau_G), drive)
+    return k_G * _ar1(pt.exp(-1.0 / tau_G), drive, exclude_current=True)
