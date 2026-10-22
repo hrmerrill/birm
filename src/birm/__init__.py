@@ -1,6 +1,6 @@
 from birm.data import MetricData, Panel
 from birm.model import IRModel, Load, Metric, Prior
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = ["IRModel", "Load", "Metric", "MetricData", "Panel", "Prior"]
