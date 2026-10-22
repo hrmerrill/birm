@@ -1,0 +1,859 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../model/">
+      
+      
+        <link rel="next" href="../api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Examples - birm</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#examples" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="birm" class="md-header__button md-logo" aria-label="birm" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            birm
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Examples
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="birm" class="md-nav__button md-logo" aria-label="birm" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    birm
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#building-a-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building a Panel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building a Panel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#long-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Long form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wide-multi-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wide / multi-sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standardizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standardizing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specifying-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specifying a model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specifying a model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#choosing-the-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing the core
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#describing-each-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Describing each metric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fitting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overriding-priors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overriding priors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#building-a-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building a Panel
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building a Panel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#long-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Long form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wide-multi-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wide / multi-sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standardizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standardizing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specifying-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specifying a model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specifying a model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#choosing-the-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing the core
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#describing-each-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Describing each metric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fitting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overriding-priors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overriding priors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="examples">Examples</h1>
+<h2 id="building-a-panel">Building a <code>Panel</code></h2>
+<p>The <code>Panel</code> is the model-ready dataset used by <code>birm</code>. It holds one contiguous daily grid along
+with the observed values and their positions on that grid. Training load is required on every day
+and is therefore imputed where missing (a missing day is a rest day, <code>0.0</code> load). Each metric and 
+its corresponding exogenous variables keeps its own observation cadence; days can be missing per 
+metric independently.</p>
+<h3 id="long-form">Long form</h3>
+<p>Use this if you have one long table containing all your measurements. Each row is a <code>(date, metric, value)</code> reading.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">birm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Panel</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># create example data as a long-form pandas dataframe</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">{</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">"date"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"2025-01-03"</span><span class="p">,</span> <span class="s2">"2025-01-03"</span><span class="p">,</span> <span class="s2">"2025-01-04"</span><span class="p">,</span> <span class="s2">"2025-01-06"</span><span class="p">],</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">"metric"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"w"</span><span class="p">,</span> <span class="s2">"hrv"</span><span class="p">,</span> <span class="s2">"hrv"</span><span class="p">,</span> <span class="s2">"speed"</span><span class="p">],</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">"value"</span><span class="p">:</span> <span class="p">[</span><span class="mf">210.0</span><span class="p">,</span> <span class="mf">64.0</span><span class="p">,</span> <span class="mf">61.0</span><span class="p">,</span> <span class="mf">4.71</span><span class="p">],</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">"trimp"</span><span class="p">:</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">210.0</span><span class="p">,</span> <span class="mf">185.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span>  <span class="c1"># HRV-day exog</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="s2">"temp"</span><span class="p">:</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">27.5</span><span class="p">],</span>  <span class="c1"># speed-day exog</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="s2">"indoor"</span><span class="p">:</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">}</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">panel</span> <span class="o">=</span> <span class="n">Panel</span><span class="o">.</span><span class="n">from_long</span><span class="p">(</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">df</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">date</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">metric</span><span class="o">=</span><span class="s2">"metric"</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">value</span><span class="o">=</span><span class="s2">"value"</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">load</span><span class="o">=</span><span class="s2">"w"</span><span class="p">,</span>  <span class="c1"># which label is the training load</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">exog</span><span class="o">=</span><span class="p">{</span><span class="s2">"hrv"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"trimp"</span><span class="p">],</span> <span class="s2">"speed"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"temp"</span><span class="p">,</span> <span class="s2">"indoor"</span><span class="p">]},</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">panel</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># 4 — days from 2025-01-03 to 2025-01-06</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="n">panel</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"hrv"</span><span class="p">]</span><span class="o">.</span><span class="n">idx</span>  <span class="c1"># array([0, 1]) — grid positions of the two HRV readings</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="n">panel</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"speed"</span><span class="p">]</span><span class="o">.</span><span class="n">exog</span>  <span class="c1"># {"temp": array([27.5]), "indoor": array([1.0])}</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">panel</span><span class="o">.</span><span class="n">densest</span><span class="p">()</span>  <span class="c1"># "hrv" has the most observations</span>
+</code></pre></div>
+<h3 id="wide-multi-sheet">Wide / multi-sheet</h3>
+<p>Use this if you track loads and metrics in different tables. Each sheet has a <code>date</code> column, a
+value column named after the metric, and (possibly) exogenous variables. Blank cells mark
+unobserved days.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># create an example dataset as a dict of multiple wide-form dataframes</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">sheets</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">"w"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"date"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"2025-01-03"</span><span class="p">],</span> <span class="s2">"w"</span><span class="p">:</span> <span class="p">[</span><span class="mf">210.0</span><span class="p">]}),</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="s2">"hrv"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"2025-01-03"</span><span class="p">,</span> <span class="s2">"2025-01-04"</span><span class="p">],</span> <span class="s2">"hrv"</span><span class="p">:</span> <span class="p">[</span><span class="mf">64.0</span><span class="p">,</span> <span class="mf">61.0</span><span class="p">],</span> <span class="s2">"trimp"</span><span class="p">:</span> <span class="p">[</span><span class="mf">210.0</span><span class="p">,</span> <span class="mf">185.0</span><span class="p">]}</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="p">),</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="s2">"speed"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"2025-01-06"</span><span class="p">],</span> <span class="s2">"speed"</span><span class="p">:</span> <span class="p">[</span><span class="mf">4.71</span><span class="p">],</span> <span class="s2">"temp"</span><span class="p">:</span> <span class="p">[</span><span class="mf">27.5</span><span class="p">],</span> <span class="s2">"indoor"</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]}</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="p">),</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">}</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">panel</span> <span class="o">=</span> <span class="n">Panel</span><span class="o">.</span><span class="n">from_sheets</span><span class="p">(</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">sheets</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">load</span><span class="o">=</span><span class="s2">"w"</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="p">{</span><span class="s2">"hrv"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"trimp"</span><span class="p">],</span> <span class="s2">"speed"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"temp"</span><span class="p">,</span> <span class="s2">"indoor"</span><span class="p">]}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">)</span>
+</code></pre></div>
+<h2 id="standardizing">Standardizing</h2>
+<p><code>standardize()</code> z-scores each metric and its exog (storing <code>(center, scale)</code> in <code>panel.scaling</code> for
+back-transform) and rescales load to average-day units so the model's gains stay <code>O(1)</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">panel</span> <span class="o">=</span> <span class="n">panel</span><span class="o">.</span><span class="n">standardize</span><span class="p">()</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">panel</span><span class="o">.</span><span class="n">scaling</span><span class="p">[</span><span class="s2">"hrv"</span><span class="p">]</span>  <span class="c1"># (center, scale) used to un-standardize HRV forecasts later</span>
+</code></pre></div>
+<p>The stored <code>scaling</code> is what forecast and simulation reuse to put future load on the model's scale 
+and to back-transform predictions.</p>
+<h2 id="specifying-a-model">Specifying a model</h2>
+<p>Once you have a <code>Panel</code>, an <code>IRModel</code> declares which impulse-response model to fit. The IR
+model is composed of antagonistic terms <code>R_t = f_t - g_t</code>, with <code>f_t</code> and <code>g_t</code> commonly
+called <code>fitness</code> and <code>fatigue</code>. You choose which form each term can take.</p>
+<p>The IR model is shared across metrics, and each metric gets its own exogenous predictors and, 
+optionally, an AR1 term orthogonalized against the intercept and the gain-free <code>fitness</code> and
+<code>fatigue</code> integrals so that it only explains variability not already explained by the drivers
+of primary importance.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">birm</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRModel</span><span class="p">,</span> <span class="n">Load</span><span class="p">,</span> <span class="n">Metric</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">IRModel</span><span class="p">(</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">load</span><span class="o">=</span><span class="n">Load</span><span class="p">(</span><span class="s2">"w"</span><span class="p">),</span>  <span class="c1"># the training-load driver w_t</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">fitness</span><span class="o">=</span><span class="s2">"banister"</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">fatigue</span><span class="o">=</span><span class="s2">"banister"</span><span class="p">,</span>  <span class="c1"># the R_t core</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">metrics</span><span class="o">=</span><span class="p">(</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        <span class="n">Metric</span><span class="p">(</span><span class="s2">"hrv"</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="p">(</span><span class="s2">"w"</span><span class="p">,),</span> <span class="n">ar1</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>  <span class="c1"># beta^(hrv) suppression + u^(hrv) drift</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="n">Metric</span><span class="p">(</span><span class="s2">"speed"</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="p">(</span><span class="s2">"temp"</span><span class="p">,</span> <span class="s2">"indoor"</span><span class="p">)),</span>  <span class="c1"># heat + treadmill adjustments; sparse, no u</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="p">),</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="choosing-the-core">Choosing the core</h3>
+<p><code>fitness</code> × <code>fatigue</code> select the shared <code>R_t</code>. Setting the Ceddia gains <code>k_p = k_a = 0</code> recovers
+the Banister linear model.</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Options</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fitness</code></td>
+<td><code>banister</code></td>
+<td>original linear fitness gain</td>
+</tr>
+<tr>
+<td></td>
+<td><code>ceddia_periodize</code></td>
+<td>periodization via fatigue feedback (<code>k_p</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>ceddia_taper</code></td>
+<td>tapering via diminishing dose returns (<code>k_a</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>ceddia</code></td>
+<td>both (<code>k_p</code> and <code>k_a</code>)</td>
+</tr>
+<tr>
+<td><code>fatigue</code></td>
+<td><code>banister</code></td>
+<td>original linear fatigue</td>
+</tr>
+<tr>
+<td></td>
+<td><code>busso</code></td>
+<td>variable-dose, time-varying <code>k_G(s)</code> (<code>tau_v</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>none</code></td>
+<td>fitness-only model</td>
+</tr>
+</tbody>
+</table>
+<h3 id="describing-each-metric">Describing each metric</h3>
+<p>Each <code>Metric</code> is a noisy, optionally transformed readout of the shared stock. Every term but the
+impulse response and white noise is optional; drop one by leaving it off.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Metric</span><span class="p">(</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">"speed"</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">link</span><span class="o">=</span><span class="s2">"identity"</span><span class="p">,</span>  <span class="c1"># l^(j): "identity" | "log" | "logit"</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">exog</span><span class="o">=</span><span class="p">(</span><span class="s2">"temp"</span><span class="p">,</span> <span class="s2">"indoor"</span><span class="p">),</span>  <span class="c1"># X^(j) columns -&gt; beta^(j)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">ar1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># include the orthogonalized slow-drift term u^(j)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">intercept</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># include the baseline alpha^(j)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">gamma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># fix the scale; None -&gt; densest metric auto-pinned to gamma == 1</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><code>link</code> applies a nonlinear transform between the latent stock and the measurement.</li>
+<li><code>exog</code> names columns that this metric carries in the panel (<code>panel.metrics[name].exog</code>); a
+  reference to a missing column is an error at fit time.</li>
+<li><code>ar1</code> adds the lag-1 process <code>u^(j)</code>, orthogonalized against the intercept and the gain-free
+  fitness and fatigue integrals to capture slow
+  unexplained drift — use it for densely observed metrics; omit it for sparse ones.</li>
+<li><code>intercept</code> adds the baseline <code>alpha^(j)</code>; drop it only when the baseline is already removed
+  (e.g. a differenced metric) or owned by another term.</li>
+<li><code>gamma</code> pins the per-metric scale. Leave it <code>None</code> and the densest metric is auto-pinned to
+  <code>gamma == 1</code>, tying the latent scale to the best-observed channel.</li>
+</ul>
+<h3 id="fitting">Fitting</h3>
+<p><code>.fit()</code> fits the model by drawing posterior samples of the parameters:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+</code></pre></div>
+<p><code>idata</code> is an ArviZ <code>InferenceData</code> holding the posterior draws. Inspect parameters, check
+convergence, and recover the latent impulse-response stock <code>R_t</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"k_F"</span><span class="p">,</span> <span class="s2">"k_G"</span><span class="p">,</span> <span class="s2">"tau_F"</span><span class="p">,</span> <span class="s2">"tau_G"</span><span class="p">],</span> <span class="n">ci_prob</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>  <span class="c1"># mean, 95% CI, r_hat</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">az</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"k_F"</span><span class="p">,</span> <span class="s2">"tau_F"</span><span class="p">])</span>  <span class="c1"># convergence diagnostics</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">R</span> <span class="o">=</span> <span class="n">idata</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">"R"</span><span class="p">]</span>  <span class="c1"># (chain, draw, T) latent stock</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">quantile</span><span class="p">([</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="s2">"chain"</span><span class="p">,</span> <span class="s2">"draw"</span><span class="p">))</span>  <span class="c1"># 95% credible band</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">idata</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="s2">"fit.nc"</span><span class="p">)</span>  <span class="c1"># cache for later reuse</span>
+</code></pre></div>
+<h3 id="overriding-priors">Overriding priors</h3>
+<p>Pass <code>Prior</code> objects keyed by parameter name to override defaults (e.g. the Ceddia <code>k_p</code>/<code>k_a</code> or
+Busso <code>tau_v</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">birm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prior</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">IRModel</span><span class="p">(</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">load</span><span class="o">=</span><span class="n">Load</span><span class="p">(</span><span class="s2">"w"</span><span class="p">),</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">fitness</span><span class="o">=</span><span class="s2">"ceddia_periodize"</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">fatigue</span><span class="o">=</span><span class="s2">"banister"</span><span class="p">,</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">metrics</span><span class="o">=</span><span class="p">(</span><span class="n">Metric</span><span class="p">(</span><span class="s2">"hrv"</span><span class="p">),),</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">priors</span><span class="o">=</span><span class="p">{</span><span class="s2">"k_p"</span><span class="p">:</span> <span class="n">Prior</span><span class="p">(</span><span class="s2">"HalfNormal"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"sigma"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">})},</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="p">)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,776 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../examples/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Model - birm</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#model-description" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="birm" class="md-header__button md-logo" aria-label="birm" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            birm
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="birm" class="md-nav__button md-logo" aria-label="birm" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    birm
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-original-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The original model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statistical-flaws-in-the-original-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statistical flaws in the original model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-birm-prior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The BIRM Prior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multivariate-inputs-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multivariate Inputs and Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modifications-to-the-impulse-response-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modifications to the impulse-response model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-hrv-and-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: HRV and speed
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-original-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The original model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statistical-flaws-in-the-original-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statistical flaws in the original model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-birm-prior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The BIRM Prior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multivariate-inputs-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multivariate Inputs and Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modifications-to-the-impulse-response-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modifications to the impulse-response model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-hrv-and-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: HRV and speed
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="model-description">Model Description</h1>
+<p>The purpose of this package is to unify multiple variants of the impulse-response model under a
+single, modular, Bayesian framework, and to resolve some of its statistical flaws by sharing
+information across different metrics and by mitigating ill-conditioned parameter spaces with
+physiologically meaningful restricted priors.</p>
+<h2 id="background">Background</h2>
+<p>The Banister impulse-response model (and its many variants) provides insights into the
+effects of training on performance through the inference of athetic performance's responses to 
+training dose as well as the prediction of future performance. It suffers from two interacting challenges:
+performance data are expensive and physically demanding to collect and therefore sparsely observed, 
+and the parameters of interest are ill-conditioned. Without a dense, high-signal dataset from
+which to learn, actionable insights from posterior parameter estimates and performance forecasts are
+unlikely.</p>
+<h3 id="the-original-model">The original model</h3>
+<p>The original <a href="https://ieeexplore.ieee.org/document/5409179">Banister 1975, Calvert 1976</a> model is
+defined by</p>
+<div class="arithmatex">\[p_t = p_0 + k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_G}\]</div>
+<p>where <span class="arithmatex">\(p_0\)</span> is an initial performance value and <span class="arithmatex">\(p_t\)</span> and <span class="arithmatex">\(w_t\)</span> are performance and training load
+at time <span class="arithmatex">\(t\)</span>, respectively. The first and second summands above are commonly called "fitness" and
+"fatigue" and are described by their gain parameters <span class="arithmatex">\(k_F, k_G\)</span> and decay rates <span class="arithmatex">\(\tau_F, \tau_G\)</span>.</p>
+<h3 id="statistical-flaws-in-the-original-model">Statistical flaws in the original model</h3>
+<p><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1974899/">Hellard 2006</a> first quantified the
+ill-conditioning issue. Using nine elite swimmers with an average of 13 performances across a
+single training season, it was demonstrated that, even though goodness-of-fit was strong (average
+<span class="arithmatex">\(R^2 \approx 0.79\)</span>), the uncertainty in the parameter estimates was wide (the bootstrapped 
+coefficient of variation was over 30% for the decay parameters and 60% for the gain parameters).
+This ill-conditioning was primarily caused by correlation of the posterior estimates (0.91 for the
+gain terms and 0.99 for the decay rates). In other words, there is a large set of widely varying
+parameter combinations that give similar model errors. It isn't difficult to see why: fitness and
+fatigue are antagonistic terms competing to explain changes in sparsely observed performance using
+similar time-filters on the same training load variable.</p>
+<p><a href="https://pubmed.ncbi.nlm.nih.gov/35320776/">Vermeire 2022</a> reproduced Hellard's result with eight
+performance observations on a cycle ergometer from a single subject and visualized the model error
+over a grid of parameter combinations, further demonstrating that (a) the error landscape over
+<span class="arithmatex">\(\tau_F\)</span> and <span class="arithmatex">\(\tau_G\)</span> is characterized by a sharp ridge near <span class="arithmatex">\(\tau_F = \tau_G\)</span>, and (b) the
+physiologically sensible region in which incremental fitness gains are smaller than fatigue
+gains, <span class="arithmatex">\(k_F &lt; k_G\)</span>, results in consistently lower error than the unreasonable alternative.</p>
+<p><a href="https://www.tandfonline.com/doi/abs/10.1080/24748668.2023.2268480">Peng 2024</a> built the first
+Bayesian Banister model. Importantly, they use informative prior parameterizations to provide a
+prior belief about values the parameters can take based on existing results from the literature. 
+Importantly, they impose an informative <em>prior structure</em> by reparameterizing <span class="arithmatex">\(k_G = \theta k_F\)</span> 
+and imposing the constraint <span class="arithmatex">\(\theta &gt; 1\)</span>; in other words, preventing the model from considering the
+physiologically unreasonable region <span class="arithmatex">\(k_F &gt; k_G\)</span> that Vermeire demonstrated resulted in poor model
+fit. They demonstrate that the Bayesian approach resulted in better parameter estimates, though
+uncertainty was still large, likely due to fitting the model to only 13 performance measurements
+(with additional noise likely caused by each performance being races of different lengths, and by
+imputing some missing training loads).</p>
+<p><a href="https://www.nature.com/articles/s41598-025-88153-7">Marchal 2025</a> also take a Bayesian approach
+and test weakly- versus moderately-informed Bayesian priors. However, they drop the physiological
+constraint <span class="arithmatex">\(\theta &gt; 1\)</span> and use performance measurements from short-track speed skaters previously
+demonstrated to be low-signal (average <span class="arithmatex">\(R^2 \approx 0.20\)</span>) via <a href="https://www.nature.com/articles/s41598-022-05392-8">alternative machine learning methods</a>. Furthermore, their MCMC traceplots
+demonstrate a single stuck chain, which may be indicative of a poorly tuned sampler rather than model issues.
+They conclude that the impulse response model presents major dysfunctions, though their conclusion
+rests on an estimate of a posterior distribution that did not converge, and on cross-validation
+applied to a small set of performance measurements (roughly 35 performances from nine athletes,
+of which roughly ten performances are allocated to the testing dataset).</p>
+<h2 id="the-birm-prior">The BIRM Prior</h2>
+<p>The ill-conditioning issue is mitigated with a reparameterization. BIRM adopts Peng's
+constraint <span class="arithmatex">\(k_F &lt; k_G\)</span> to restrict the model to only search for optimal parameter
+combinations in a physiologically reasonable space. To motivate similar reparameterizations for
+the decay terms, we represent <span class="arithmatex">\(k_G/k_F\)</span> in terms of decay rates and the time it takes the impulse
+response to recover <span class="arithmatex">\(t_r\)</span> and peak <span class="arithmatex">\(t_p\)</span>:</p>
+<div class="arithmatex">\[k_G/k_F = (\tau_F/\tau_G)^{\left(\frac{1}{t_p/t_r - 1}\right)} \]</div>
+<p>This satisfies the constraint <span class="arithmatex">\(k_G/k_F &gt; 1\)</span> either when <span class="arithmatex">\(\tau_F &gt; \tau_G\)</span> and <span class="arithmatex">\(t_p &gt; t_r\)</span>,
+or when <span class="arithmatex">\(\tau_F &lt; \tau_G\)</span> and <span class="arithmatex">\(t_p &lt; t_r\)</span>. The former is the physiologically reasonable
+scenario: fitness is accumulated over longer timescales than fatigue, and the impulse response
+recovers before it peaks.</p>
+<p>In <a href="https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html">Ceddia 2026</a>, the 
+authors derive an admissibility condition implied by bounded infinite-horizon optimal training
+policies (i.e., finite human performance):</p>
+<div class="arithmatex">\[ k_G \left(1 + \frac{1}{e^{1/\tau_G} - 1}\right) - \frac{k_F}{e^{1/\tau_F} - 1} &gt; 0 \]</div>
+<p>Rearranging to express the condition in terms of our earlier reparameterization, we see that</p>
+<div class="arithmatex">\[k_G/k_F &gt; \frac{1 - e^{-1/\tau_G}}{ e^{1/\tau_F} - 1} \equiv a_c\]</div>
+<p>It can be shown via Taylor expansion that</p>
+<div class="arithmatex">\[\frac{1}{\log(2 - e^{-1/\tau_G})} = \tau_G + 1 + \mathcal{O}(1/\tau_G^2)\]</div>
+<p>and therefore admissibility <span class="arithmatex">\(a_c\)</span> approximately satisfies the condition <span class="arithmatex">\(a_c &gt; 1\)</span> when
+<span class="arithmatex">\(\tau_F &gt; \tau_G + 1\)</span>. BIRM therefore provides the following two parameterizations:
+the <code>informed</code> version is</p>
+<div class="arithmatex">\[k_G = (\phi + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,\]</div>
+<div class="arithmatex">\[\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),\]</div>
+<div class="arithmatex">\[\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)\]</div>
+<p>which produce posterior estimates which satisfy the constraints <span class="arithmatex">\(k_G/k_F &gt; 1\)</span> and
+<span class="arithmatex">\(\tau_F &gt; \tau_G + 1\)</span> with certainty. Note that <span class="arithmatex">\(k_G/k_F &gt; 1\)</span> and the (approximately) implied
+<span class="arithmatex">\(a_c &gt; 1\)</span> is weaker than the admissibility condition <span class="arithmatex">\(k_G/k_F &gt; a_c\)</span>. The <code>admissible</code> version
+imposes the stronger constraint such that posterior admissibility is certain:</p>
+<div class="arithmatex">\[k_G = (\phi + a_c) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,\]</div>
+<div class="arithmatex">\[\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),\]</div>
+<div class="arithmatex">\[\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)\]</div>
+<p>Note that strictly imposing <span class="arithmatex">\(k_G/k_F &gt; a_c\)</span> can bias parameter estimates from
+athletes who have not yet reached peak performance.</p>
+<h2 id="multivariate-inputs-and-outputs">Multivariate Inputs and Outputs</h2>
+<p>Assimilating additional data alongside performance (e.g., heart rate variability from consumer
+wearables) and controlling for performance effect modifiers (e.g., temperature and other external
+stressors) can further refine parameter estimates and improve forecast performance.
+To set notation, let <span class="arithmatex">\(w_t\)</span> be training load, <span class="arithmatex">\(f_t\)</span> be fitness, <span class="arithmatex">\(g_t\)</span> be fatigue, and
+<span class="arithmatex">\(R_t = f_t - g_t\)</span> be the impulse response on day <span class="arithmatex">\(t\)</span>. Multiple target variables (e.g., HRV and
+speed) can be represented as transformed, noisy measurements of the underlying IR model. The
+<span class="arithmatex">\(j^{th}\)</span> response variable <span class="arithmatex">\(j=1,...,J\)</span> at time <span class="arithmatex">\(t\)</span>, <span class="arithmatex">\(Y^{(j)}_t\)</span>, is given by</p>
+<div class="arithmatex">\[ Y^{(j)}_t = \alpha^{(j)} + \gamma^{(j)} l^{(j)}\left(R_t\right) + X^{(j)}_t\beta^{(j)} + u^{(j)}_t + \epsilon^{(j)}_t\]</div>
+<p>where <span class="arithmatex">\(\alpha^{(j)}\)</span> is the intercept analogous to initial performance <span class="arithmatex">\(p_0\)</span> in Banister's formulation,
+<span class="arithmatex">\(\gamma^{(j)}\)</span> is a regression parameter for the linear relationship between the measurement and the
+transformed latent impulse response model, <span class="arithmatex">\(l^{(j)}(\cdot)\)</span> is a link function to represent nonlinear
+relationships across measurement types, and <span class="arithmatex">\(\beta^{(j)}\)</span> are coefficients corresponding to exogenous
+predictors <span class="arithmatex">\(X^{(j)}\)</span>.</p>
+<p>Residuals are composed into two terms: <span class="arithmatex">\(\epsilon^{(j)}_t \sim N(0, \sigma^2_\epsilon)\)</span> representing IID
+noise, and <span class="arithmatex">\(u^{(j)}_t\)</span>, a lag-1 autoregressive process orthogonalized to lie in the null space of the
+intercept and the fitness and fatigue integrals and capturing variation (e.g., slow drift due to unmeasured stress
+and fatigue, daily responses to sleep and nutrition, etc.) not explained by the main effects.</p>
+<p>In this package, every term except the
+impulse-response <span class="arithmatex">\(R_t\)</span> and the white noise <span class="arithmatex">\(\epsilon^{(j)}_t\)</span> is optional. Note that there are <span class="arithmatex">\(J+1\)</span> possible
+time grids; they are "ragged" in that training loads <span class="arithmatex">\(w_t\)</span> and channels <span class="arithmatex">\(Y^{(j)}_t\)</span> exist on their
+own measurement cadence. Each day may or may not have an observation from each channel, independently.</p>
+<h2 id="modifications-to-the-impulse-response-model">Modifications to the impulse-response model</h2>
+<p>The original Banister 1975 IR model is defined by</p>
+<div class="arithmatex">\[R^{(O)}_t = k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_G}\]</div>
+<p><a href="https://www.ovid.com/jnls/acsm-msse/abstract/10.1249/01.mss.0000074465.13621.37">Busso 2003</a>
+modified the fatigue gain to vary over time by responding to training load:</p>
+<div class="arithmatex">\[R^{(V)}_t = k_F\sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_F} - \sum_{s=0}^{t-1}k_G(s) w_s e^{-(t-s)/\tau_G},\]</div>
+<div class="arithmatex">\[k_G(t) = \sum_{s=0}^{t-1} w_s e^{-(t-s)/\tau_v}.\]</div>
+<p>The nonlinear fatigue gain accumulates with more recent training on timescales that are expected to be
+smaller than fitness and fatigue level. We therefore impose the physiological constraint
+<span class="arithmatex">\(\tau_F &gt; \tau_G &gt; \tau_v\)</span> with the reparameterization <span class="arithmatex">\(\tau_G = \tau_v + \lambda_G\)</span> and 
+<span class="arithmatex">\(\tau_F = 1 + \tau_G + \lambda_F\)</span> with log-normal priors on <span class="arithmatex">\(\lambda_G\)</span> and <span class="arithmatex">\(\lambda_F\)</span>.</p>
+<p><a href="https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html">Ceddia 2026</a> studied
+the optimal training routines implied by Banister and Busso's models and devised their own
+modifications that induce periodization and tapering:</p>
+<div class="arithmatex">\[R^{(C)}_t = \sum_{s=0}^{t-1}M_F(w_s, g_s)e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1}w_s\,e^{-(t-s)/\tau_G}\]</div>
+<p>All nonlinearity lives in the fitness-gain function <span class="arithmatex">\(M_F(w_s, g_s)\)</span>; Ceddia's Eq. (17) leaves the fatigue
+impulse linear in <span class="arithmatex">\(w_s\)</span> (he explicitly declines to modify the fatigue response, as that "would amount to
+redefining the training impulse itself"). Setting <span class="arithmatex">\(k_p = k_a = 0\)</span> recovers <span class="arithmatex">\(M_F = k_F w_s\)</span>, the Banister
+linear model.</p>
+<p>Periodization is induced by fatigue feedback: diminishing gain as fatigue accumulates (cf. Ceddia Eq. (28))</p>
+<div class="arithmatex">\[M_F(w_s, g_s) = \frac{k_F w_s}{1 + k_p g_s}, \]</div>
+<p>and tapering is induced by diminishing returns in the impulse (cf. Ceddia Eqs. (19)–(21))</p>
+<div class="arithmatex">\[M_F(w_s, g_s) = \frac{k_F w_s}{1+k_a w_s}\]</div>
+<p>and both by </p>
+<div class="arithmatex">\[M_F(w_s, g_s) = \frac{k_F w_s}{(1 + k_p g_s)(1+k_a w_s)}.\]</div>
+<h2 id="example-hrv-and-speed">Example: HRV and speed</h2>
+<p><span class="arithmatex">\(Y^{(1)}_t\)</span> and <span class="arithmatex">\(Y^{(2)}_t\)</span> are HRV and speed, respectively. <span class="arithmatex">\(X^{(1)}_t\)</span> is the training load <span class="arithmatex">\(w_t\)</span> to
+represent a possible daily HRV suppression effect <span class="arithmatex">\(\beta^{(1)}_t\)</span>, and <span class="arithmatex">\(X^{(2)}_t\)</span> contains outdoor
+temperature (to adjust for heat) and an indicator of whether each run was performed indoors on a treadmill,
+giving speed two exogenous predictors. HRV is observed near daily, so we include a <span class="arithmatex">\(u^{(1)}_t\)</span> term. speed
+is more sparsely observed; no <span class="arithmatex">\(u\)</span> is warranted. Both channels use the identity link
+<span class="arithmatex">\(l^{(1)}(x) = l^{(2)}(x) = x\)</span>, and we set <span class="arithmatex">\(\gamma^{(1)} \equiv 1\)</span> so the scale of the IR model is pinned
+to the more densely observed channel HRV. The shared impulse-response model is the Ceddia
+variant whose optimal training sequence is characterized by periodization and tapering. The joint 
+model is therefore</p>
+<div class="arithmatex">\[ Y^{(1)}_t = \alpha^{(1)} + R^{(C)}_t + X^{(1)}_t\beta^{(1)} + u^{(1)}_t + \epsilon^{(1)}_t\]</div>
+<div class="arithmatex">\[ Y^{(2)}_t = \alpha^{(2)} + \gamma^{(2)} R^{(C)}_t + X^{(2)}_t\beta^{(2)} + \epsilon^{(2)}_t\]</div>
+<p>You would define this model in BIRM like so:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">IRModel</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">load</span><span class="o">=</span><span class="n">Load</span><span class="p">(</span><span class="s2">"w"</span><span class="p">),</span>  <span class="c1"># the training-load driver w_t</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">fitness</span><span class="o">=</span><span class="s2">"ceddia"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">fatigue</span><span class="o">=</span><span class="s2">"banister"</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">metrics</span><span class="o">=</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">Metric</span><span class="p">(</span><span class="s2">"hrv"</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="p">(</span><span class="s2">"w"</span><span class="p">,),</span> <span class="n">ar1</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>  <span class="c1"># hrv suppression + drift (u)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="n">Metric</span><span class="p">(</span><span class="s2">"speed"</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="p">(</span><span class="s2">"temp"</span><span class="p">,</span> <span class="s2">"indoor"</span><span class="p">)),</span>  <span class="c1"># heat + treadmill effects</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">),</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
