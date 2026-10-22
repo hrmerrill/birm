@@ -40,9 +40,10 @@ def fitness_stock(
     - ``ceddia_taper`` — $k_F w_s / (1 + k_a w_s)$ (tapering via diminishing returns).
     - ``ceddia`` — $k_F w_s / \big((1 + k_p g_s)(1 + k_a w_s)\big)$ (both).
 
-    and $f_t = \sum_{s<t} M_F(w_s, g_s) e^{-(t-s)/\tau_F}$. For the periodization factor the
-    **lagged** fatigue stock $g_{s-1}$ is used (``g`` shifted one day, with ``0`` prepended),
-    so today's own load cannot instantly gate itself. When a periodization variant is paired with
+    and $f_t = \sum_{s<t} M_F(w_s, g_s) e^{-(t-s)/\tau_F}$. The periodization factor uses the
+    fatigue stock $g_s$ entering day $s$, which is strictly causal
+    ($g_s = k_G \sum_{u<s} w_u e^{-(s-u)/\tau_G}$), so yesterday's load gates today's gain but
+    today's own load cannot instantly gate itself. When a periodization variant is paired with
     ``g=None`` (i.e. a ``none`` fatigue model) there is no fatigue to feed back, so the
     periodization factor is dropped and the variant degenerates to the taper/Banister form; a
     [UserWarning][] is emitted because the requested spec is effectively overridden.
@@ -99,9 +100,8 @@ def fitness_stock(
                 stacklevel=2,
             )
         else:
-            g = pt.as_tensor_variable(g)
-            g_lag = pt.concatenate([pt.zeros(1), g[:-1]])  # yesterday's fatigue (causal feedback)
-            forcing = forcing / (1.0 + k_p * g_lag)
+            # g_s already excludes day s (fatigue_stock is strictly causal), so no extra shift.
+            forcing = forcing / (1.0 + k_p * pt.as_tensor_variable(g))
 
     if variant in ("ceddia_taper", "ceddia"):
         forcing = forcing / (1.0 + k_a * drive)

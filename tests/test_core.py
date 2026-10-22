@@ -140,13 +140,23 @@ def test_fitness_taper_matches_oracle(drive: np.ndarray) -> None:
 
 
 def test_fitness_periodize_matches_oracle(drive: np.ndarray, fatigue: np.ndarray) -> None:
-    """Periodization divides the gain by ``1 + k_p g_lag`` using yesterday's fatigue."""
-    g_lag = np.concatenate([[0.0], fatigue[:-1]])
-    forcing = 0.8 * drive / (1.0 + 0.5 * g_lag)
+    """Periodization divides the gain by ``1 + k_p g_s`` using the (causal) fatigue entering s."""
+    forcing = 0.8 * drive / (1.0 + 0.5 * fatigue)
     got = fitness_stock(
         drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=fatigue, k_p=0.5
     ).eval()
     assert np.allclose(got, _leaky_causal(forcing, 40.0))
+
+
+def test_periodize_yesterday_gates_today() -> None:
+    """A session yesterday (not only two+ days ago) reduces today's fitness gain."""
+    back_to_back = np.array([1.0, 1.0, 0.0])
+    g = fatigue_stock(back_to_back, k_G=1.0, tau_G=1.0).eval()
+    gated = fitness_stock(
+        back_to_back, k_F=1.0, tau_F=40.0, variant="ceddia_periodize", g=g, k_p=1.0
+    ).eval()
+    banister = fitness_stock(back_to_back, k_F=1.0, tau_F=40.0, variant="banister").eval()
+    assert gated[-1] < banister[-1]
 
 
 def test_periodize_without_fatigue_is_banister(drive: np.ndarray) -> None:
