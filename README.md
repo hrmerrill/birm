@@ -54,7 +54,7 @@ your data.
 ### Specifying a model
 
 An `IRModel` is the declarative spec of the shared-stock impulse-response model. You define it by
-picking a `fitness` × `fatigue` core and attach one `Metric` per response series, then fit it with
+picking an impulse-response `core` and attach one `Metric` per response series, then fit it with
 `.fit(panel)`.
 
 ```python
@@ -62,8 +62,7 @@ from birm import IRModel, Load, Metric
 
 model = IRModel(
     load=Load("w"),  # training-load driver w_t
-    fitness="banister",
-    fatigue="banister",  # selects the impulse-response core R_t
+    core="banister",  # selects the impulse-response core R_t
     metrics=(
         Metric("hrv", exog=("w",), ar1=True),  # HRV-suppression beta + slow drift u
         Metric("speed", exog=("temp", "indoor")),  # heat + treadmill adjustments
