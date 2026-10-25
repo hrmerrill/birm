@@ -75,8 +75,7 @@ def _model(name: str) -> IRModel:
     param = "direct" if name == "baseline" else "informed"
     return IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=metrics,
         parameterization=param,
     )
@@ -282,7 +281,11 @@ def _metrics(idata: Any, panel: Panel, model: str, runtime: float) -> dict[str, 
     else:
         row["r2_perf2_mean"] = row["r2_perf2_lo"] = row["r2_perf2_hi"] = np.nan
 
-    row["admiss_prob"] = float((_flat(idata, "admiss") > 0).mean())
+    # Ceddia (2026) admissibility margin, recomputed from the Banister draws.
+    admiss = draws["k_G"] / (1.0 - np.exp(-1.0 / draws["tau_G"])) - draws["k_F"] / np.expm1(
+        1.0 / draws["tau_F"]
+    )
+    row["admiss_prob"] = float((admiss > 0).mean())
 
     summ = az.summary(idata, var_names=list(PARAMS))
     row["max_rhat"] = float(summ["r_hat"].max())

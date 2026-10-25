@@ -48,8 +48,7 @@ def main() -> None:
 
     model = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(
             Metric("hrv", exog=("load_prev",), ar1=True),  # gamma == 1 (densest), u^HRV
             Metric("speed", exog=("wetbulb",), ar1=False),  # gamma^perf estimated, no u
@@ -64,7 +63,7 @@ def main() -> None:
 
     summary = az.summary(
         idata,
-        var_names=["k_F", "k_G", "tau_F", "tau_G", "admiss", "theta", "gamma_speed"],
+        var_names=["k_F", "k_G", "tau_F", "tau_G", "theta", "gamma_speed"],
         filter_vars="like",
     )
     print(summary)

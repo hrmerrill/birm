@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 import matplotlib  # ty: ignore[unresolved-import]
 
@@ -49,6 +50,14 @@ _PARAMS = [
 ]
 
 
+def _with_admiss(post: Any) -> Any:
+    """Attach the Ceddia (2026) admissibility margin ``admiss`` recomputed from the draws."""
+    margin = post["k_G"] / (1.0 - np.exp(-1.0 / post["tau_G"])) - post["k_F"] / np.expm1(
+        1.0 / post["tau_F"]
+    )
+    return post.assign(admiss=margin)
+
+
 def _summary(post: az.InferenceData, name: str) -> tuple[float, float, float, float]:
     """Return ``(mean, 2.5th, 97.5th, r_hat)`` for one variable's pooled draws."""
     draws = np.asarray(post[name]).reshape(-1)
@@ -75,8 +84,8 @@ def main(offset_nc: Path = DEFAULT_OFFSET, baseline_nc: Path = DEFAULT_BASELINE)
     baseline_nc : Path
         Cached posterior of the baseline (no-offset) model for side-by-side comparison.
     """
-    off = az.from_netcdf(offset_nc).posterior
-    base = az.from_netcdf(baseline_nc).posterior if baseline_nc.exists() else None
+    off = _with_admiss(az.from_netcdf(offset_nc).posterior)
+    base = _with_admiss(az.from_netcdf(baseline_nc).posterior) if baseline_nc.exists() else None
 
     # --- Table: baseline vs offset shared-stock parameters ---------------------
     print("\n=== Shared-stock parameters: baseline vs offset ===")
