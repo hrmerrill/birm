@@ -1,6 +1,6 @@
 [project]
 name = "birm"
-version = "0.1.2"
+version = "0.1.3"
 description = "Bayesian Impulse-Response Modeling"
 readme = "README.md"
 license = { text = "Apache 2.0" }
@@ -72,7 +72,7 @@ source = ["birm"]
 show_missing = true
 
 [tool.bumpversion]
-current_version = "0.1.2"
+current_version = "0.1.3"
 commit = true
 tag = false
 message = "chore: bump version {current_version} → {new_version}"
