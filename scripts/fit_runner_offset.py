@@ -44,8 +44,7 @@ def main() -> None:
 
     model = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(
             # gamma == 1 anchor; shifted (HRV reads r_{t-d}) iff --hrv, else held at d == 0
             Metric("hrv", exog=("load_prev",), ar1=True, offset=SHIFT_HRV),
@@ -63,7 +62,7 @@ def main() -> None:
 
     summary = az.summary(
         idata,
-        var_names=["k_F", "k_G", "tau_F", "tau_G", "admiss", "theta", "gamma_speed", "offset_d"],
+        var_names=["k_F", "k_G", "tau_F", "tau_G", "theta", "gamma_speed", "offset_d"],
         filter_vars="like",
     )
     print(summary)

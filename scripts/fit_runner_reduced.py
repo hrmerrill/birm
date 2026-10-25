@@ -40,8 +40,7 @@ def main() -> None:
     # 1. Joint model, no exogenous predictors.
     joint = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", ar1=True), Metric("speed")),
     )
     idata1 = joint.fit(_panel(long, ["hrv", "speed"]), sampler={"random_seed": 0})
@@ -51,8 +50,7 @@ def main() -> None:
     # 2. Univariate Bayesian Banister on mmGAP only.
     uni = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("speed"),),
     )
     idata2 = uni.fit(_panel(long, ["speed"]), sampler={"random_seed": 0})
@@ -61,7 +59,7 @@ def main() -> None:
 
     for name, idata in (("joint_noexog", idata1), ("mmgap_univariate", idata2)):
         print(f"\n=== {name} ===")
-        print(az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G", "admiss"]))
+        print(az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G"]))
 
 
 if __name__ == "__main__":

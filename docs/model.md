@@ -82,23 +82,7 @@ or when $\tau_F < \tau_G$ and $t_p < t_r$. The former is the physiologically rea
 scenario: fitness is accumulated over longer timescales than fatigue, and the impulse response
 recovers before it peaks.
 
-In [Ceddia 2026](https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html), the 
-authors derive an admissibility condition implied by bounded infinite-horizon optimal training
-policies (i.e., finite human performance):
-
-$$ k_G \left(1 + \frac{1}{e^{1/\tau_G} - 1}\right) - \frac{k_F}{e^{1/\tau_F} - 1} > 0 $$
-
-Rearranging to express the condition in terms of our earlier reparameterization, we see that
-
-$$k_G/k_F > \frac{1 - e^{-1/\tau_G}}{ e^{1/\tau_F} - 1} \equiv a_c$$
-
-It can be shown via Taylor expansion that
-
-$$\frac{1}{\log(2 - e^{-1/\tau_G})} = \tau_G + 1 + \mathcal{O}(1/\tau_G^2)$$
-
-and therefore admissibility $a_c$ approximately satisfies the condition $a_c > 1$ when
-$\tau_F > \tau_G + 1$. BIRM therefore provides the following two parameterizations:
-the `informed` version is
+BIRM therefore uses the following `informed` parameterization by default:
 
 $$k_G = (\phi + 1) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
 
@@ -106,19 +90,11 @@ $$\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),$$
 
 $$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
 
-which produce posterior estimates which satisfy the constraints $k_G/k_F > 1$ and
-$\tau_F > \tau_G + 1$ with certainty. Note that $k_G/k_F > 1$ and the (approximately) implied
-$a_c > 1$ is weaker than the admissibility condition $k_G/k_F > a_c$. The `admissible` version
-imposes the stronger constraint such that posterior admissibility is certain:
-
-$$k_G = (\phi + a_c) k_F \quad \text{ and } \quad \tau_F = 1 + \tau_G + \lambda_F,$$
-
-$$\phi \sim \text{LogNormal}(\mu_\phi, \sigma_\phi^2),$$
-
-$$\lambda_F \sim \text{LogNormal}(\mu_{\lambda_F}, \sigma_{\lambda_F}^2)$$
-
-Note that strictly imposing $k_G/k_F > a_c$ can bias parameter estimates from
-athletes who have not yet reached peak performance.
+which produces posterior estimates that satisfy the constraints $k_G/k_F > 1$ and
+$\tau_F > \tau_G + 1$ with certainty. The one-day offset keeps the sampler off the singular
+$\tau_F = \tau_G$ ridge. The `direct` parameterization instead samples $k_F, k_G, \tau_F, \tau_G$
+independently from weakly-informative priors; it is the ill-conditioned baseline that `informed`
+is designed to fix.
 
 ## Multivariate Inputs and Outputs
 Assimilating additional data alongside performance (e.g., heart rate variability from consumer
@@ -166,27 +142,39 @@ $\tau_F > \tau_G > \tau_v$ with the reparameterization $\tau_G = \tau_v + \lambd
 $\tau_F = 1 + \tau_G + \lambda_F$ with log-normal priors on $\lambda_G$ and $\lambda_F$.
 
 [Ceddia 2026](https://www.degruyterbrill.com/document/doi/10.1515/jqas-2025-0077/html) studied
-the optimal training routines implied by Banister and Busso's models and devised their own
-modifications that induce periodization and tapering:
+the optimal training routines implied by Banister and Busso's models and explored modifications
+of the general form (his Eq. 17)
 
-$$R^{(C)}_t = \sum_{s=0}^{t-1}M_F(w_s, g_s)e^{-(t-s)/\tau_F} - k_G\sum_{s=0}^{t-1}w_s\,e^{-(t-s)/\tau_G}$$
+$$R^{(C)}_t = \sum_{s=0}^{t-1}M_F(w_s)\,e^{-(t-s)/\tau_F(w_s)} - k_G\sum_{s=0}^{t-1}w_s\,e^{-(t-s)/\tau_G(w_s)},$$
 
-All nonlinearity lives in the fitness-gain function $M_F(w_s, g_s)$; Ceddia's Eq. (17) leaves the fatigue
-impulse linear in $w_s$ (he explicitly declines to modify the fatigue response, as that "would amount to
-redefining the training impulse itself"). Setting $k_p = k_a = 0$ recovers $M_F = k_F w_s$, the Banister
-linear model.
+in which the fitness gain may show diminishing returns in the training impulse and either
+time constant may depend on the load of the session that produced it. The fatigue impulse stays
+linear in $w_s$: Ceddia declines to modify it, as that "would amount to redefining the training
+impulse itself". Of the forms he explored, his Fig. 10 and conclusion section single out the
+combination of a power-law diminishing return in the fitness magnitude (his Eq. 20) and time
+constants that grow linearly with the impulse (his Eq. 30 with $m = 1$). BIRM's `ceddia` core
+implements this form:
 
-Periodization is induced by fatigue feedback: diminishing gain as fatigue accumulates (cf. Ceddia Eq. (28))
+$$M_F(w) = k_F\,\frac{(1 + w)^{1 - k_D} - 1}{1 - k_D}, \qquad
+\tau_F(w) = \tau_F + \tau_{F1} w, \qquad \tau_G(w) = \tau_G + \tau_{G1} w,$$
 
-$$M_F(w_s, g_s) = \frac{k_F w_s}{1 + k_p g_s}, $$
+with $k_D \ge 0$ and $\tau_{F1}, \tau_{G1} \ge 0$. In Ceddia's notation, $k_1 = k_F$, $k_2 = k_G$,
+$k_3 = k_D$, $\tau_{11} = \tau_F$, $\tau_{12} = \tau_{F1}$, $\tau_{21} = \tau_G$ and
+$\tau_{22} = \tau_{G1}$. $M_F$ has slope $k_F$ at $w = 0$, tends to $k_F \log(1 + w)$ as
+$k_D \to 1$, and reduces to Banister's $k_F w$ at $k_D = 0$. Setting
+$k_D = \tau_{F1} = \tau_{G1} = 0$ recovers the Banister model exactly.
 
-and tapering is induced by diminishing returns in the impulse (cf. Ceddia Eqs. (19)–(21))
+Because $M_F$ depends on $1 + w$, the curvature of the diminishing return depends on the units of
+the load. The decay-time slopes are made unit-free by sampling the fractional lengthening $\rho$
+of each time constant after a session of typical load $\bar w$ (the mean load over training
+days): $\tau_{F1} = \rho_F \tau_F/\bar w$ and $\tau_{G1} = \rho_G \tau_G/\bar w$. Under the
+`informed` parameterization, $\rho_F = \rho_G + \lambda_\rho$ with $\lambda_\rho \ge 0$. Together
+with $\tau_F > \tau_G + 1$, this keeps $\tau_F(w) > \tau_G(w) + 1$ at every load.
 
-$$M_F(w_s, g_s) = \frac{k_F w_s}{1+k_a w_s}$$
-
-and both by 
-
-$$M_F(w_s, g_s) = \frac{k_F w_s}{(1 + k_p g_s)(1+k_a w_s)}.$$
+Ceddia's Section 5.1 notes that such parameters are unlikely to be inferable from weekly or
+fortnightly performance tests. BIRM's priors on $k_D$, $\rho_G$ and $\lambda_\rho$ are therefore
+`HalfNormal` and shrink toward the Banister model; densely observed metrics such as HRV are what
+give the data a chance to move them.
 
 ## Example: HRV and speed
 
@@ -197,7 +185,7 @@ giving speed two exogenous predictors. HRV is observed near daily, so we include
 is more sparsely observed; no $u$ is warranted. Both channels use the identity link
 $l^{(1)}(x) = l^{(2)}(x) = x$, and we set $\gamma^{(1)} \equiv 1$ so the scale of the IR model is pinned
 to the more densely observed channel HRV. The shared impulse-response model is the Ceddia
-variant whose optimal training sequence is characterized by periodization and tapering. The joint 
+variant, whose optimal training sequence sheds fatigue while still training. The joint 
 model is therefore
 
 $$ Y^{(1)}_t = \alpha^{(1)} + R^{(C)}_t + X^{(1)}_t\beta^{(1)} + u^{(1)}_t + \epsilon^{(1)}_t$$
@@ -209,8 +197,7 @@ You would define this model in BIRM like so:
 ```python
 model = IRModel(
     load=Load("w"),  # the training-load driver w_t
-    fitness="ceddia",
-    fatigue="banister",
+    core="ceddia",
     metrics=(
         Metric("hrv", exog=("w",), ar1=True),  # hrv suppression + drift (u)
         Metric("speed", exog=("temp", "indoor")),  # heat + treadmill effects

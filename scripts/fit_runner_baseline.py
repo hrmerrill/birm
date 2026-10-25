@@ -39,8 +39,7 @@ def main() -> None:
 
     baseline = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("speed"),),
         parameterization="direct",
     )
@@ -49,7 +48,7 @@ def main() -> None:
     print("saved -> cache/mmgap_baseline.nc")
 
     print("\n=== mmgap_baseline (direct, unconstrained) ===")
-    print(az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G", "admiss"]))
+    print(az.summary(idata, var_names=["k_F", "k_G", "tau_F", "tau_G"]))
     diverging = int(idata.sample_stats["diverging"].sum())
     print(f"\ndivergences: {diverging}")
 

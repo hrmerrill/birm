@@ -64,34 +64,10 @@ def drive() -> np.ndarray:
     return np.array([1.0, 0.0, 2.0, 0.5, 0.0, 1.5, 0.0, 3.0], dtype=float)
 
 
-@pytest.fixture
-def fatigue(drive: np.ndarray) -> np.ndarray:
-    """Return a concrete fatigue stock to feed the periodization feedback.
-
-    Parameters
-    ----------
-    drive : np.ndarray
-        The daily load fixture.
-
-    Returns
-    -------
-    np.ndarray
-        A banister fatigue stock evaluated at ``k_G=1.5``, ``tau_G=7``.
-    """
-    return _leaky(1.5 * drive, 7.0)
-
-
 def test_fatigue_banister_matches_oracle(drive: np.ndarray) -> None:
     """Banister fatigue equals ``k_G`` times the leaky load integral."""
     got = fatigue_stock(drive, k_G=1.5, tau_G=7.0, variant="banister").eval()
     assert np.allclose(got, 1.5 * _leaky_causal(drive, 7.0))
-
-
-def test_fatigue_none_is_zero(drive: np.ndarray) -> None:
-    """The fitness-only (``none``) fatigue stock is identically zero."""
-    got = fatigue_stock(drive, k_G=1.5, tau_G=7.0, variant="none").eval()
-    assert np.allclose(got, 0.0)
-    assert got.shape == drive.shape
 
 
 def test_fatigue_busso_matches_oracle(drive: np.ndarray) -> None:
@@ -120,65 +96,90 @@ def test_fitness_banister_matches_oracle(drive: np.ndarray) -> None:
     assert np.allclose(got, _leaky_causal(0.8 * drive, 40.0))
 
 
-@pytest.mark.parametrize("variant", ["ceddia_periodize", "ceddia_taper", "ceddia"])
-def test_ceddia_null_recovers_banister(
-    drive: np.ndarray, fatigue: np.ndarray, variant: str
-) -> None:
-    """With ``k_p = k_a = 0`` every Ceddia variant collapses to the Banister null."""
-    banister = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
-    got = fitness_stock(
-        drive, k_F=0.8, tau_F=40.0, variant=variant, g=fatigue, k_p=0.0, k_a=0.0
-    ).eval()
-    assert np.allclose(got, banister)
+def _ceddia_oracle(drive: np.ndarray, forcing: np.ndarray, tau0: float, tau1: float) -> np.ndarray:
+    """Brute-force ``sum_{s<t} forcing_s exp(-(t-s)/(tau0 + tau1 w_s))``.
+
+    Parameters
+    ----------
+    drive : np.ndarray
+        Per-day load setting each impulse's decay time.
+    forcing : np.ndarray
+        Per-day impulse.
+    tau0 : float
+        Zero-load decay time constant.
+    tau1 : float
+        Decay-time slope per unit load.
+
+    Returns
+    -------
+    np.ndarray
+        The accumulated stock.
+    """
+    out = np.zeros_like(drive)
+    for t in range(len(drive)):
+        for s in range(t):
+            out[t] += forcing[s] * np.exp(-(t - s) / (tau0 + tau1 * drive[s]))
+    return out
 
 
-def test_fitness_taper_matches_oracle(drive: np.ndarray) -> None:
-    """Tapering divides the gain by ``1 + k_a w`` before integrating."""
-    forcing = 0.8 * drive / (1.0 + 0.3 * drive)
-    got = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="ceddia_taper", k_a=0.3).eval()
-    assert np.allclose(got, _leaky_causal(forcing, 40.0))
+def test_diminishing_gain_matches_eq20(drive: np.ndarray) -> None:
+    """M_F = k1/(k3-1) (1 - (1+w)^-(k3-1)) (Ceddia Eq. 20), Banister at 0, log at 1."""
+    from birm.core.fitness import diminishing_gain
+
+    expected = 0.8 / (0.5 - 1.0) * (1.0 - (1.0 + drive) ** -(0.5 - 1.0))
+    assert np.allclose(diminishing_gain(drive, 0.8, 0.5).eval(), expected)
+    assert np.allclose(diminishing_gain(drive, 0.8, 0.0).eval(), 0.8 * drive)
+    assert np.allclose(diminishing_gain(drive, 0.8, 1.0).eval(), 0.8 * np.log1p(drive))
 
 
-def test_fitness_periodize_matches_oracle(drive: np.ndarray, fatigue: np.ndarray) -> None:
-    """Periodization divides the gain by ``1 + k_p g_s`` using the (causal) fatigue entering s."""
-    forcing = 0.8 * drive / (1.0 + 0.5 * fatigue)
-    got = fitness_stock(
-        drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=fatigue, k_p=0.5
-    ).eval()
-    assert np.allclose(got, _leaky_causal(forcing, 40.0))
+def test_diminishing_gain_gradient_finite_at_one() -> None:
+    """The k_D -> 1 log limit keeps the gradient finite."""
+    import pytensor
+    import pytensor.tensor as pt
+
+    from birm.core.fitness import diminishing_gain
+
+    k_D = pt.scalar("k_D")
+    grad = pytensor.function([k_D], pt.grad(diminishing_gain(np.array([2.0]), 1.0, k_D).sum(), k_D))
+    assert np.isfinite(grad(1.0))
 
 
-def test_periodize_yesterday_gates_today() -> None:
-    """A session yesterday (not only two+ days ago) reduces today's fitness gain."""
-    back_to_back = np.array([1.0, 1.0, 0.0])
-    g = fatigue_stock(back_to_back, k_G=1.0, tau_G=1.0).eval()
-    gated = fitness_stock(
-        back_to_back, k_F=1.0, tau_F=40.0, variant="ceddia_periodize", g=g, k_p=1.0
-    ).eval()
-    banister = fitness_stock(back_to_back, k_F=1.0, tau_F=40.0, variant="banister").eval()
-    assert gated[-1] < banister[-1]
+def test_fitness_ceddia_matches_oracle(drive: np.ndarray) -> None:
+    """Ceddia fitness = power-law gain decaying with a load-dependent time constant."""
+    forcing = 0.8 * ((1.0 + drive) ** 0.5 - 1.0) / 0.5
+    expected = _ceddia_oracle(drive, forcing, 3.0, 2.0)
+    got = fitness_stock(drive, 0.8, 3.0, variant="ceddia", k_D=0.5, tau_F1=2.0).eval()
+    assert np.allclose(got, expected)
 
 
-def test_periodize_without_fatigue_is_banister(drive: np.ndarray) -> None:
-    """Periodization with no fatigue stock (``g=None``) warns and drops the feedback factor."""
-    banister = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
-    with pytest.warns(UserWarning, match="periodization"):
-        got = fitness_stock(
-            drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=None, k_p=0.5
-        ).eval()
-    assert np.allclose(got, banister)
+def test_fatigue_ceddia_matches_oracle(drive: np.ndarray) -> None:
+    """Ceddia fatigue = linear gain decaying with a load-dependent time constant."""
+    expected = 1.5 * _ceddia_oracle(drive, drive, 2.0, 0.5)
+    got = fatigue_stock(drive, 1.5, 2.0, variant="ceddia", tau_G1=0.5).eval()
+    assert np.allclose(got, expected)
 
 
-def test_periodization_dampens_fitness(drive: np.ndarray, fatigue: np.ndarray) -> None:
-    """Stronger periodization (larger ``k_p``) lowers the accumulated fitness stock."""
-    weak = fitness_stock(
-        drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=fatigue, k_p=0.1
-    ).eval()
-    strong = fitness_stock(
-        drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=fatigue, k_p=1.0
-    ).eval()
-    assert (strong <= weak + 1e-9).all()
-    assert strong[-1] < weak[-1]
+def test_ceddia_null_recovers_banister(drive: np.ndarray) -> None:
+    """With ``k_D = tau_F1 = tau_G1 = 0`` the Ceddia core is exactly Banister."""
+    from birm.core.stock import impulse_response
+
+    kw = {"k_F": 0.8, "tau_F": 40.0, "k_G": 1.5, "tau_G": 10.0}
+    banister = impulse_response(drive, core="banister", **kw).eval()
+    assert np.allclose(impulse_response(drive, core="ceddia", **kw).eval(), banister)
+
+
+def test_ceddia_heavier_load_decays_slower() -> None:
+    """A larger session leaves a longer-lived (relatively) fatigue trace."""
+    light = fatigue_stock(np.array([1.0, 0, 0, 0, 0]), 1.0, 2.0, variant="ceddia", tau_G1=1.0)
+    heavy = fatigue_stock(np.array([4.0, 0, 0, 0, 0]), 1.0, 2.0, variant="ceddia", tau_G1=1.0)
+    light, heavy = light.eval(), heavy.eval() / 4.0
+    assert heavy[-1] / heavy[1] > light[-1] / light[1]
+
+
+def test_ceddia_no_training_is_zero() -> None:
+    """With no training days the varying-decay kernel is empty and the stock is zero."""
+    got = fatigue_stock(np.zeros(4), 1.0, 2.0, variant="ceddia", tau_G1=1.0).eval()
+    assert np.allclose(got, 0.0)
 
 
 def test_fitness_unknown_variant(drive: np.ndarray) -> None:
@@ -211,56 +212,11 @@ def test_reparam_fatigue_gain_floors_ratio() -> None:
     assert fatigue_gain(0.1, 3.0) > 0.1
 
 
-def test_reparam_admissible_fatigue_gain_floors_at_a_c() -> None:
-    """k_G = (a_c + theta) k_F enforces k_G / k_F >= a_c for theta >= 0."""
-    from birm.core.admissibility import admissibility_threshold
-    from birm.core.reparam import admissible_fatigue_gain
+def test_reparam_decay_slope() -> None:
+    """tau_1 = rho tau / w_ref lengthens tau by a factor (1 + rho) at the reference load."""
+    from birm.core.reparam import decay_slope
 
-    k_F, tau_F, tau_G = 0.1, 40.0, 10.0
-    a_c = admissibility_threshold(tau_F, tau_G)
-    assert admissible_fatigue_gain(k_F, 0.0, tau_F, tau_G) == pytest.approx(a_c * k_F)
-    assert admissible_fatigue_gain(k_F, 0.5, tau_F, tau_G) == pytest.approx((a_c + 0.5) * k_F)
-    assert admissible_fatigue_gain(k_F, 0.0, tau_F, tau_G) / k_F >= a_c
-
-
-def test_admissibility_matches_formula() -> None:
-    """The admissibility margin matches its closed form (numpy inputs -> numpy out)."""
-    from birm.core.admissibility import admissibility
-
-    k_F, k_G, tau_F, tau_G = 0.1, 0.4, 40.0, 10.0
-    expected = k_G * (1.0 + 1.0 / (np.exp(1.0 / tau_G) - 1.0)) - k_F / (np.exp(1.0 / tau_F) - 1.0)
-    assert admissibility(k_F, k_G, tau_F, tau_G) == pytest.approx(expected)
-
-
-def test_admissibility_symbolic_inputs_return_tensor() -> None:
-    """Symbolic inputs dispatch through to a PyTensor variable that evaluates to the margin."""
-    import pytensor.tensor as pt
-
-    from birm.core.admissibility import admissibility
-
-    k_F = pt.scalar("k_F")
-    out = admissibility(k_F, 0.4, 40.0, 10.0)
-    assert hasattr(out, "eval")
-    assert out.eval({k_F: 0.1}) == pytest.approx(admissibility(0.1, 0.4, 40.0, 10.0))
-
-
-def test_admissibility_margin_sign_tracks_threshold() -> None:
-    """Margin > 0 exactly when k_G/k_F exceeds the a_c gain-ratio floor."""
-    from birm.core.admissibility import admissibility, admissibility_threshold
-
-    tau_F, tau_G, k_F = 40.0, 10.0, 0.1
-    a_c = admissibility_threshold(tau_F, tau_G)
-    above = admissibility(k_F, (a_c + 0.5) * k_F, tau_F, tau_G)
-    below = admissibility(k_F, (a_c - 0.1 if a_c > 0.1 else a_c * 0.5) * k_F, tau_F, tau_G)
-    assert above > 0.0
-    assert below < 0.0
-
-
-def test_admissibility_threshold_above_one_when_tau_f_exceeds() -> None:
-    """a_c > 1 approximately holds when tau_F > tau_G + 1 (the reparam's +1 offset)."""
-    from birm.core.admissibility import admissibility_threshold
-
-    assert admissibility_threshold(1.0 + 10.0 + 5.0, 10.0) > 1.0
+    assert 10.0 + decay_slope(10.0, 0.5, 4.0) * 4.0 == pytest.approx(15.0)
 
 
 def test_impulse_response_is_fitness_minus_fatigue(drive: np.ndarray) -> None:
@@ -269,59 +225,27 @@ def test_impulse_response_is_fitness_minus_fatigue(drive: np.ndarray) -> None:
 
     f = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
     g = fatigue_stock(drive, k_G=1.5, tau_G=10.0, variant="banister").eval()
-    got = impulse_response(
-        drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, fitness="banister", fatigue="banister"
-    ).eval()
+    got = impulse_response(drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, core="banister").eval()
     assert np.allclose(got, f - g)
 
 
-def test_impulse_response_none_fatigue_is_fitness_only(drive: np.ndarray) -> None:
-    """With fatigue='none' the stock is the fitness stock alone (g_t == 0)."""
+def test_impulse_response_fitness_only(drive: np.ndarray) -> None:
+    """With core='fitness-only' the stock is the fitness stock alone (g_t == 0)."""
     from birm.core.stock import impulse_response
 
     f = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
     got = impulse_response(
-        drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, fitness="banister", fatigue="none"
+        drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, core="fitness-only"
     ).eval()
     assert np.allclose(got, f)
 
 
-def test_impulse_response_periodize_feeds_fatigue(drive: np.ndarray) -> None:
-    """The ceddia_periodize fitness gets the model's own fatigue stock fed back (no warning)."""
+def test_impulse_response_unknown_core(drive: np.ndarray) -> None:
+    """An unrecognized core is rejected."""
     from birm.core.stock import impulse_response
 
-    g = fatigue_stock(drive, k_G=1.5, tau_G=10.0, variant="banister").eval()
-    f = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="ceddia_periodize", g=g, k_p=0.5).eval()
-    got = impulse_response(
-        drive,
-        k_F=0.8,
-        tau_F=40.0,
-        k_G=1.5,
-        tau_G=10.0,
-        fitness="ceddia_periodize",
-        fatigue="banister",
-        k_p=0.5,
-    ).eval()
-    assert np.allclose(got, f - g)
-
-
-def test_impulse_response_periodize_none_fatigue_warns(drive: np.ndarray) -> None:
-    """ceddia_periodize + none fatigue drops the feedback and warns."""
-    from birm.core.stock import impulse_response
-
-    f = fitness_stock(drive, k_F=0.8, tau_F=40.0, variant="banister").eval()
-    with pytest.warns(UserWarning, match="periodization"):
-        got = impulse_response(
-            drive,
-            k_F=0.8,
-            tau_F=40.0,
-            k_G=1.5,
-            tau_G=10.0,
-            fitness="ceddia_periodize",
-            fatigue="none",
-            k_p=0.5,
-        ).eval()
-    assert np.allclose(got, f)
+    with pytest.raises(ValueError, match="core"):
+        impulse_response(drive, k_F=0.8, tau_F=40.0, core="nope")
 
 
 def test_impulse_response_busso_requires_tau_v(drive: np.ndarray) -> None:
@@ -329,6 +253,4 @@ def test_impulse_response_busso_requires_tau_v(drive: np.ndarray) -> None:
     from birm.core.stock import impulse_response
 
     with pytest.raises(ValueError, match="tau_v"):
-        impulse_response(
-            drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, fitness="banister", fatigue="busso"
-        )
+        impulse_response(drive, k_F=0.8, tau_F=40.0, k_G=1.5, tau_G=10.0, core="busso")

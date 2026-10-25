@@ -48,8 +48,7 @@ HRV and speed controlling for their corresponding exogenous variables:
 ```python
 model = IRModel(
     load=Load("w"),  # the training-load driver
-    fitness="banister",
-    fatigue="banister",
+    core="banister",
     metrics=(
         Metric("hrv", exog=("w",)),  # hrv suppression
         Metric("speed", exog=("temp", "indoor")),  # heat + treadmill effects

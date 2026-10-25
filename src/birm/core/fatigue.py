@@ -1,21 +1,22 @@
-r"""Fatigue stock $g_t$: ``banister`` | ``busso`` | ``none``.
+r"""Fatigue stock $g_t$: ``banister`` | ``busso`` | ``ceddia``.
 
 Each variant turns the training-load drive $w_t$ into the fatigue component of the latent
 impulse-response stock on the shared daily grid. The fatigue impulse stays linear in the load
-across all variants; the only variation is whether the gain is constant (``banister``),
-time-varying through a third accumulated-load timescale (``busso``), or absent (``none``, a
-fitness-only model).
+across all variants; the variants differ in whether the gain is constant (``banister``),
+time-varying through a third accumulated-load timescale (``busso``), or constant with a decay
+time constant that grows with the session load (``ceddia``).
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import pytensor.tensor as pt
 
-from birm.core.integrator import _ar1
+from birm.core.integrator import _ar1, _leaky_varying
 
-FATIGUE = ("banister", "busso", "none")
+FATIGUE = ("banister", "busso", "ceddia")
 
 
 def fatigue_stock(
@@ -25,10 +26,9 @@ def fatigue_stock(
     *,
     variant: str = "banister",
     tau_v: Any = None,
+    tau_G1: Any = 0.0,
 ) -> pt.TensorVariable:
     r"""Build the fatigue stock $g_t$ for the chosen variant.
-
-    The three variants are
 
     - ``banister`` — constant gain: $g_t = k_G \sum_{s<t} w_s e^{-(t-s)/\tau_G}$.
     - ``busso`` — variable dose-response: the gain is itself a leaky integral of recent load,
@@ -36,20 +36,25 @@ def fatigue_stock(
       $g_t = \sum_{s<t} k_G(s)\, w_s e^{-(t-s)/\tau_G}$. ``tau_v`` is the third (fastest)
       timescale and must be supplied; the ordering $\tau_v < \tau_G$ is the caller's
       (model layer) responsibility.
-    - ``none`` — fitness-only model: $g_t \equiv 0$.
+    - ``ceddia`` — Ceddia (2026, Eq. 30 with $m = 1$):
+      $g_t = k_G \sum_{s<t} w_s e^{-(t-s)/\tau_G(w_s)}$ with
+      $\tau_G(w) = \tau_G + \tau_{G1} w$ (Ceddia's $\tau_{21}$, $\tau_{22}$).
 
     Parameters
     ----------
     drive : Any
-        Training-load drive $w_t$ on the daily grid, length ``T`` (array-like or tensor).
+        Training-load drive $w_t$ on the daily grid, length ``T``. Must be a concrete array for
+        ``ceddia``.
     k_G : Any
         Fatigue gain $k_G$, a float or scalar tensor.
     tau_G : Any
-        Fatigue decay time constant $\tau_G$ in days, a float or scalar tensor.
+        Fatigue decay time constant $\tau_G$ in days (at zero load for ``ceddia``).
     variant : str
-        One of ``banister``, ``busso``, ``none``.
+        One of ``banister``, ``busso``, ``ceddia``.
     tau_v : Any, optional
         Busso third timescale $\tau_v$ in days; required when ``variant="busso"``.
+    tau_G1 : Any
+        Days of extra fatigue decay time per unit load, $\tau_{G1} \ge 0$ (``ceddia`` only).
 
     Returns
     -------
@@ -64,11 +69,11 @@ def fatigue_stock(
     if variant not in FATIGUE:
         raise ValueError(f"fatigue variant must be one of {FATIGUE}, got {variant!r}")
 
+    if variant == "ceddia":
+        w = np.asarray(drive, dtype=float)
+        return k_G * _leaky_varying(pt.as_tensor_variable(w), tau_G + tau_G1 * w, w)
+
     drive = pt.as_tensor_variable(drive)
-
-    if variant == "none":
-        return pt.zeros_like(drive)
-
     if variant == "busso":
         if tau_v is None:
             raise ValueError("busso fatigue requires tau_v (the third, fastest timescale)")

@@ -84,7 +84,7 @@ and to back-transform predictions.
 
 Once you have a `Panel`, an `IRModel` declares which impulse-response model to fit. The IR
 model is composed of antagonistic terms `R_t = f_t - g_t`, with `f_t` and `g_t` commonly
-called `fitness` and `fatigue`. You choose which form each term can take.
+called `fitness` and `fatigue`. You choose the form of these terms by picking a `core`.
 
 The IR model is shared across metrics, and each metric gets its own exogenous predictors and, 
 optionally, an AR1 term orthogonalized against the intercept and the gain-free `fitness` and
@@ -96,8 +96,7 @@ from birm import IRModel, Load, Metric
 
 model = IRModel(
     load=Load("w"),  # the training-load driver w_t
-    fitness="banister",
-    fatigue="banister",  # the R_t core
+    core="banister",  # the R_t core
     metrics=(
         Metric("hrv", exog=("w",), ar1=True),  # beta^(hrv) suppression + u^(hrv) drift
         Metric("speed", exog=("temp", "indoor")),  # heat + treadmill adjustments; sparse, no u
@@ -107,18 +106,17 @@ model = IRModel(
 
 ### Choosing the core
 
-`fitness` × `fatigue` select the shared `R_t`. Setting the Ceddia gains `k_p = k_a = 0` recovers
-the Banister linear model.
+`core` selects the shared `R_t`.
 
-| Argument | Options | Meaning |
-|---|---|---|
-| `fitness` | `banister` | original linear fitness gain |
-| | `ceddia_periodize` | periodization via fatigue feedback (`k_p`) |
-| | `ceddia_taper` | tapering via diminishing dose returns (`k_a`) |
-| | `ceddia` | both (`k_p` and `k_a`) |
-| `fatigue` | `banister` | original linear fatigue |
-| | `busso` | variable-dose, time-varying `k_G(s)` (`tau_v`) |
-| | `none` | fitness-only model |
+| `core` | Meaning |
+|---|---|
+| `banister` | original linear fitness and fatigue (Banister 1975) |
+| `busso` | fatigue gain grows with recent load over a third timescale `tau_v` (Busso 2003) |
+| `ceddia` | diminishing-returns fitness gain (`k_D`) and decay times that grow with session load (`rho_F`, `rho_G`) (Ceddia 2026, Fig. 10, Section 6) |
+| `fitness-only` | Banister fitness with no fatigue term |
+
+Setting `k_D = rho_F = rho_G = 0` reduces `ceddia` to `banister`. See the
+[model description](model.md#modifications-to-the-impulse-response-model) for the equations.
 
 ### Describing each metric
 
@@ -171,17 +169,16 @@ idata.to_netcdf("fit.nc")  # cache for later reuse
 
 ### Overriding priors
 
-Pass `Prior` objects keyed by parameter name to override defaults (e.g. the Ceddia `k_p`/`k_a` or
-Busso `tau_v`):
+Pass `Prior` objects keyed by parameter name to override defaults (e.g. the Ceddia `k_D` or Busso
+`tau_v`):
 
 ```python
 from birm import Prior
 
 model = IRModel(
     load=Load("w"),
-    fitness="ceddia_periodize",
-    fatigue="banister",
+    core="ceddia",
     metrics=(Metric("hrv"),),
-    priors={"k_p": Prior("HalfNormal", {"sigma": 0.5})},
+    priors={"k_D": Prior("HalfNormal", {"sigma": 0.5})},
 )
 ```
