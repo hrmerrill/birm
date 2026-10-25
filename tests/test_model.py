@@ -33,8 +33,7 @@ def test_fit_validates_and_warns_on_unused_metrics() -> None:
     """A valid spec warns on unused panel metrics while building the model."""
     model = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", exog=("w",), ar1=True),),
     )
     with pytest.warns(UserWarning, match="speed"):
@@ -42,23 +41,22 @@ def test_fit_validates_and_warns_on_unused_metrics() -> None:
     assert "obs_hrv" in _named(built)
 
 
-@pytest.mark.parametrize("fitness", ["banister", "ceddia_periodize", "ceddia_taper", "ceddia"])
-@pytest.mark.parametrize("fatigue", ["banister", "busso", "none"])
-def test_build_model_cores(fitness: str, fatigue: str) -> None:
-    """Every fitness x fatigue core assembles with the expected reparam/admissibility vars."""
+@pytest.mark.parametrize("core", ["banister", "busso", "ceddia", "fitness-only"])
+def test_build_model_cores(core: str) -> None:
+    """Every core assembles with the expected reparameterized vars."""
     spec = IRModel(
         load=Load("w"),
-        fitness=fitness,
-        fatigue=fatigue,
+        core=core,
         metrics=(Metric("hrv", exog=("w",), ar1=True), Metric("speed")),
     )
     names = _named(spec.build_model(_panel()))
     assert {"R", "tau_F", "tau_G", "k_F", "obs_hrv", "obs_speed"} <= names
-    assert ("admiss" in names) == (fatigue != "none")
-    assert ("k_G" in names) == (fatigue != "none")
-    assert ("tau_v" in names) == (fatigue == "busso")
-    assert ("k_p" in names) == (fitness in ("ceddia_periodize", "ceddia"))
-    assert ("k_a" in names) == (fitness in ("ceddia_taper", "ceddia"))
+    assert "admiss" not in names
+    assert ("k_G" in names) == (core != "fitness-only")
+    assert ("tau_v" in names) == (core == "busso")
+    ceddia = {"k_D", "rho_G", "lambda_rho", "rho_F", "tau_F1", "tau_G1"}
+    assert (ceddia <= names) == (core == "ceddia")
+    assert ceddia.isdisjoint(names) == (core != "ceddia")
     # densest metric (hrv, 2 obs) is gamma-pinned; speed is estimated.
     assert "gamma_speed" in names
     assert "gamma_hrv" not in names
@@ -71,8 +69,7 @@ def test_build_model_fixed_gamma_no_intercept_links() -> None:
     """Fixed gamma, dropped intercept, and non-identity links resolve without extra RVs."""
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(
             Metric("hrv", link="log", intercept=False),
             Metric("speed", gamma=2.0),
@@ -87,8 +84,7 @@ def test_prior_override() -> None:
     """A ``priors`` entry replaces the default distribution for that name."""
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv"),),
         priors={"k_F": Prior("LogNormal", {"mu": 0.0, "sigma": 1.0})},
     )
@@ -101,8 +97,7 @@ def test_fit_samples_inferencedata() -> None:
     """A tiny ``fit`` returns an InferenceData carrying the per-metric likelihood group."""
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", ar1=True), Metric("speed")),
     )
     idata = spec.fit(
@@ -114,20 +109,17 @@ def test_fit_samples_inferencedata() -> None:
 
 
 def test_unknown_core_rejected() -> None:
-    """Unrecognized fitness/fatigue cores raise ValueError at construction."""
-    with pytest.raises(ValueError, match="fitness"):
-        IRModel(load=Load("w"), fitness="nope", fatigue="banister", metrics=(Metric("hrv"),))
-    with pytest.raises(ValueError, match="fatigue"):
-        IRModel(load=Load("w"), fitness="banister", fatigue="nope", metrics=(Metric("hrv"),))
+    """An unrecognized core raises ValueError at construction."""
+    with pytest.raises(ValueError, match="core"):
+        IRModel(load=Load("w"), core="nope", metrics=(Metric("hrv"),))
 
 
-@pytest.mark.parametrize("fatigue", ["banister", "busso", "none"])
-def test_direct_parameterization_samples_raw_params(fatigue: str) -> None:
+@pytest.mark.parametrize("core", ["banister", "busso", "ceddia", "fitness-only"])
+def test_direct_parameterization_samples_raw_params(core: str) -> None:
     """``direct`` mode exposes k_G/tau_F/tau_G as free RVs and drops the reparam margins."""
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue=fatigue,
+        core=core,
         metrics=(Metric("hrv", ar1=True), Metric("speed")),
         parameterization="direct",
     )
@@ -136,30 +128,12 @@ def test_direct_parameterization_samples_raw_params(fatigue: str) -> None:
     free = {v.name for v in built.free_RVs}
     assert {"R", "k_F", "tau_F", "tau_G"} <= names
     # No reparameterization margins in direct mode.
-    assert {"theta", "lambda_f", "lambda_g"}.isdisjoint(names)
+    assert {"theta", "lambda_f", "lambda_g", "lambda_rho"}.isdisjoint(names)
     # tau_F/tau_G are sampled directly rather than derived.
     assert {"tau_F", "tau_G"} <= free
-    assert ("admiss" in names) == (fatigue != "none")
-    assert ("k_G" in free) == (fatigue != "none")
-    assert ("tau_v" in free) == (fatigue == "busso")
-
-
-def test_admissible_parameterization_floors_gain_at_a_c() -> None:
-    """``admissible`` keeps the reparam margins but derives k_G = (a_c + theta) k_F."""
-    spec = IRModel(
-        load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
-        metrics=(Metric("hrv", ar1=True), Metric("speed")),
-        parameterization="admissible",
-    )
-    built = spec.build_model(_panel())
-    names = _named(built)
-    free = {v.name for v in built.free_RVs}
-    # Same reparameterized structure as ``informed``: margins sampled, k_G/tau_F derived.
-    assert {"R", "k_F", "k_G", "tau_F", "tau_G", "theta", "lambda_f", "admiss"} <= names
-    assert {"k_F", "theta", "lambda_f", "tau_G"} <= free
-    assert {"k_G", "tau_F"}.isdisjoint(free)  # derived deterministics, not free RVs
+    assert ("k_G" in free) == (core != "fitness-only")
+    assert ("tau_v" in free) == (core == "busso")
+    assert ({"k_D", "rho_F", "rho_G"} <= free) == (core == "ceddia")
 
 
 def test_unknown_parameterization_rejected() -> None:
@@ -167,8 +141,7 @@ def test_unknown_parameterization_rejected() -> None:
     with pytest.raises(ValueError, match="parameterization"):
         IRModel(
             load=Load("w"),
-            fitness="banister",
-            fatigue="banister",
+            core="banister",
             metrics=(Metric("hrv"),),
             parameterization="nope",
         )
@@ -179,12 +152,11 @@ def test_duplicate_and_empty_metrics_rejected() -> None:
     with pytest.raises(ValueError, match="unique"):
         IRModel(
             load=Load("w"),
-            fitness="banister",
-            fatigue="banister",
+            core="banister",
             metrics=(Metric("hrv"), Metric("hrv")),
         )
     with pytest.raises(ValueError, match="at least one"):
-        IRModel(load=Load("w"), fitness="banister", fatigue="banister", metrics=())
+        IRModel(load=Load("w"), core="banister", metrics=())
 
 
 def test_bad_link_rejected() -> None:
@@ -195,16 +167,13 @@ def test_bad_link_rejected() -> None:
 
 def test_missing_metric_and_exog_rejected() -> None:
     """A spec metric absent from the panel, or a missing exog column, raises ValueError."""
-    absent = IRModel(
-        load=Load("w"), fitness="banister", fatigue="banister", metrics=(Metric("power"),)
-    )
+    absent = IRModel(load=Load("w"), core="banister", metrics=(Metric("power"),))
     with pytest.raises(ValueError, match="not found in panel"):
         absent.fit(_panel())
 
     bad_exog = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("speed", exog=("temp",)),),
     )
     with pytest.raises(ValueError, match="exog"):
@@ -216,8 +185,7 @@ def test_offset_rejects_empty_support() -> None:
     # the tiny 5-day panel has no grid index in [_OFFSET_MAX, T-1]; the common support is empty.
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", exog=("w",), ar1=True), Metric("speed", offset=True)),
     )
     with pytest.raises(ValueError, match="common support"):
@@ -249,8 +217,7 @@ def test_offset_marginalizes_and_recovers_known_shift() -> None:
     )
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", exog=("w",), ar1=True), Metric("speed", offset=True)),
     )
     model = spec.build_model(panel)
@@ -317,8 +284,7 @@ def test_offset_with_ar1_builds_and_marginalizes() -> None:
     )
     spec = IRModel(
         load=Load("w"),
-        fitness="banister",
-        fatigue="banister",
+        core="banister",
         metrics=(Metric("hrv", exog=("w",), ar1=True, offset=True), Metric("speed")),
     )
     model = spec.build_model(panel)
