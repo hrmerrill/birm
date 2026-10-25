@@ -1,9 +1,10 @@
-r"""Shared leaky-integrator [_ar1][] reused by fitness, fatigue, and the Busso gain."""
+r"""Shared leaky integrators: [_ar1][] (fixed decay) and [_leaky_varying][] (per-impulse decay)."""
 
 from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import pytensor
 import pytensor.tensor as pt
 
@@ -67,3 +68,33 @@ def _ar1(
     # Dropping the same-day term x_t - forcing_t turns the inclusive sum_{s<=t} into sum_{s<t}
     # while preserving the e^{-(t-s)/tau} kernel (nearest past day t-1 keeps weight e^{-1/tau}).
     return stock - forcing if exclude_current else stock
+
+
+def _leaky_varying(forcing: Any, tau: Any, drive: np.ndarray) -> pt.TensorVariable:
+    r"""Strictly causal sum with a per-impulse decay $x_t = \sum_{s<t} F_s e^{-(t-s)/\tau_s}$.
+
+    Each impulse $F_s$ decays with its own time constant $\tau_s$ (Ceddia 2026, Eq. 17), so no
+    single recursion applies. The kernel is built densely over the training days only (days with
+    $w_s > 0$; the forcing must vanish on rest days), costing ``O(T * S)`` for ``S`` training days.
+
+    Parameters
+    ----------
+    forcing : Any
+        Per-day impulse $F_s$, length ``T`` (array-like or tensor); zero wherever ``drive`` is.
+    tau : Any
+        Per-day decay time constant $\tau_s$ in days, length ``T`` (array-like or tensor).
+    drive : np.ndarray
+        Concrete training load $w_t$, length ``T``, whose positive days index the kernel columns.
+
+    Returns
+    -------
+    pytensor.tensor.TensorVariable
+        The accumulated stock, length ``T``.
+    """
+    days = np.flatnonzero(drive > 0)
+    lag = np.arange(len(drive))[:, None] - days[None, :]
+    causal = lag > 0
+    lag = np.where(causal, lag, 0).astype(float)
+    tau_s = pt.as_tensor_variable(tau)[days]
+    kernel = pt.exp(-lag / tau_s[None, :]) * causal
+    return pt.dot(kernel, pt.as_tensor_variable(forcing)[days])

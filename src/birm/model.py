@@ -11,9 +11,9 @@ import pymc as pm
 import pytensor.tensor as pt
 
 from birm.core import (
-    admissibility,
-    admissible_fatigue_gain,
+    CORES,
     apply_link,
+    decay_slope,
     fatigue_gain,
     fatigue_timescale,
     fitness_timescale,
@@ -21,13 +21,11 @@ from birm.core import (
     observation_mean,
     orthogonalize,
 )
-from birm.core.integrator import _ar1
+from birm.core.integrator import _ar1, _leaky_varying
 from birm.data import Panel
 
-FITNESS = ("banister", "ceddia_periodize", "ceddia_taper", "ceddia")
-FATIGUE = ("banister", "busso", "none")
 LINKS = ("identity", "log", "logit")
-PARAMETERIZATIONS = ("informed", "admissible", "direct")
+PARAMETERIZATIONS = ("informed", "direct")
 
 # Default prior hyperparameters. Scales marked ``* spread`` are multiplied by the densest
 # or per-metric response spread so gains stay O(1) whether or not the panel was standardized.
@@ -38,7 +36,10 @@ _LAMBDA_F = (33.0, 0.3)  # LogNormal(log mu, sigma) days, margin: tau_F = 1 + ta
 _LAMBDA_G = (8.0, 0.4)  # LogNormal(log mu, sigma) margin: tau_G = tau_v + lambda_g (busso)
 _THETA = (4.0, 0.5)  # LogNormal(log mu, sigma) driver: k_G = (theta + 1) k_F, r = theta + 1
 _K_F_FACTOR = 0.1  # HalfNormal(k_F) sigma = factor * densest spread
-_K_SIGMA = 1.0  # HalfNormal for the Ceddia periodization/taper strengths k_p, k_a
+# Ceddia (2026) priors are deliberately informative and shrink toward Banister: Ceddia's
+# Section 5.1 expects these to be weakly identified from sparse performance tests.
+_K_D_SIGMA = 1.0  # HalfNormal for the Ceddia diminishing-returns exponent k_D
+_RHO_SIGMA = 0.5  # HalfNormal for rho_G, lambda_rho (informed) or rho_F, rho_G (direct)
 
 # Weakly-informative defaults for the ``direct`` (unconstrained) parameterization: the gains and
 # both timescales are sampled independently over wide ranges, with no ordering or gain-ratio
@@ -186,39 +187,36 @@ class Metric:
 class IRModel:
     r"""Declarative spec of the shared-stock multivariate impulse-response model.
 
-    Selects one impulse-response core $R_t$ via ``fitness`` $\times$ ``fatigue`` and
-    attaches one observation layer per [Metric][birm.model.Metric]. Call
-    [fit][birm.model.IRModel.fit] with a [Panel][birm.data.Panel] to sample.
+    Selects one impulse-response ``core`` $R_t$ and attaches one observation layer per
+    [Metric][birm.model.Metric]. Call [fit][birm.model.IRModel.fit] with a
+    [Panel][birm.data.Panel] to sample.
 
     Parameters
     ----------
     load : Load
         The training-load driver $w_t$.
-    fitness : str
-        Fitness core $M_F$; one of ``banister``, ``ceddia_periodize``, ``ceddia_taper``,
-        ``ceddia``.
-    fatigue : str
-        Fatigue core; one of ``banister``, ``busso``, ``none``.
+    core : str
+        Impulse-response core; one of ``banister`` (Banister 1975), ``busso`` (fatigue gain
+        grows with recent load), ``ceddia`` (diminishing-returns fitness gain and decay times
+        that grow with session load, Ceddia 2026), or ``fitness-only`` (no fatigue).
     metrics : tuple[Metric, ...]
         Response metrics sharing the single latent stock.
     priors : dict[str, Prior]
-        Optional overrides for named model parameters (e.g. ``k_p``, ``k_a``, ``tau_v``).
+        Optional overrides for named model parameters (e.g. ``k_D``, ``rho_G``, ``tau_v``).
     parameterization : str
-        Latent-stock prior geometry; one of ``informed``, ``admissible``, or ``direct``.
+        Latent-stock prior geometry; one of ``informed`` or ``direct``.
         ``informed`` (default) samples the identifiable reparameterized margins
-        ($\theta, \lambda_F, \lambda_G$) so the gain ratio and timescale ordering
-        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty (off the
-        $\tau_F = \tau_G$ ridge). ``admissible`` is identical but floors the gain ratio at the
-        Ceddia (2026) admissibility metric $a_c$ via $k_G = (a_c + \theta) k_F$, so
-        $P(k_G/k_F > a_c) = 1$ in the posterior. ``direct`` instead samples $k_F$, $k_G$,
-        $\tau_F$, $\tau_G$ (and Busso $\tau_v$) independently from weakly-informative
-        ``HalfNormal``/``LogNormal`` priors over wide ranges, with no ordering or gain-ratio
-        constraint -- the ill-conditioned baseline the reparameterization is designed to fix.
+        ($\theta, \lambda_F, \lambda_G, \lambda_\rho$) so the gain ratio and timescale ordering
+        $\tau_v < \tau_G < \tau_F$ (at every load, for Ceddia) and $k_G > k_F$ hold with
+        certainty (off the $\tau_F = \tau_G$ ridge). ``direct`` instead samples $k_F$, $k_G$,
+        $\tau_F$, $\tau_G$ (and Busso $\tau_v$, Ceddia $\rho_F, \rho_G$) independently from
+        weakly-informative ``HalfNormal``/``LogNormal`` priors over wide ranges, with no
+        ordering or gain-ratio constraint -- the ill-conditioned baseline the
+        reparameterization is designed to fix.
     """
 
     load: Load
-    fitness: str
-    fatigue: str
+    core: str
     metrics: tuple[Metric, ...]
     priors: dict[str, Prior] = field(default_factory=dict)
     parameterization: str = "informed"
@@ -229,13 +227,11 @@ class IRModel:
         Raises
         ------
         ValueError
-            If ``fitness``/``fatigue``/``parameterization`` are unrecognized, no metrics are given,
+            If ``core``/``parameterization`` are unrecognized, no metrics are given,
             or metric names are not unique.
         """
-        if self.fitness not in FITNESS:
-            raise ValueError(f"fitness must be one of {FITNESS}, got {self.fitness!r}")
-        if self.fatigue not in FATIGUE:
-            raise ValueError(f"fatigue must be one of {FATIGUE}, got {self.fatigue!r}")
+        if self.core not in CORES:
+            raise ValueError(f"core must be one of {CORES}, got {self.core!r}")
         if self.parameterization not in PARAMETERIZATIONS:
             raise ValueError(
                 f"parameterization must be one of {PARAMETERIZATIONS}, "
@@ -308,7 +304,7 @@ class IRModel:
         return model
 
     def _stock(self, drive: np.ndarray, scale: float) -> tuple[Any, Any]:
-        r"""Build the shared latent stock $R_t$ with reparameterized, admissible priors.
+        r"""Build the shared latent stock $R_t$ with reparameterized priors.
 
         Parameters
         ----------
@@ -328,15 +324,12 @@ class IRModel:
             k_F, tau_F, k_G, tau_G, tau_v = self._stock_params_direct(scale)
         else:
             k_F, tau_F, k_G, tau_G, tau_v = self._stock_params_informed(scale)
-        if self.fatigue != "none":
-            pm.Deterministic("admiss", admissibility(k_F, k_G, tau_F, tau_G))
 
-        k_p: Any = 0.0
-        if self.fitness in ("ceddia_periodize", "ceddia"):
-            k_p = _rv(self.priors, "k_p", "HalfNormal", sigma=_K_SIGMA)
-        k_a: Any = 0.0
-        if self.fitness in ("ceddia_taper", "ceddia"):
-            k_a = _rv(self.priors, "k_a", "HalfNormal", sigma=_K_SIGMA)
+        k_D: Any = 0.0
+        tau_F1: Any = 0.0
+        tau_G1: Any = 0.0
+        if self.core == "ceddia":
+            k_D, tau_F1, tau_G1 = self._ceddia_params(drive, tau_F, tau_G)
 
         stock = impulse_response(
             drive,
@@ -344,11 +337,11 @@ class IRModel:
             tau_F=tau_F,
             k_G=k_G,
             tau_G=tau_G,
-            fitness=self.fitness,
-            fatigue=self.fatigue,
-            k_p=k_p,
-            k_a=k_a,
+            core=self.core,
             tau_v=tau_v,
+            k_D=k_D,
+            tau_F1=tau_F1,
+            tau_G1=tau_G1,
         )
         # Orthogonalization design for the AR(1) residual: the gain-free base integrals at the
         # current timescales. Sweeping the fitness (and fatigue) integral directions out of u forces
@@ -356,21 +349,76 @@ class IRModel:
         # gains and timescales stay identified. Net R alone is insufficient: u could still absorb
         # the fatigue direction orthogonal to R and strand tau_G at its prior.
         grid_len = len(drive)
-        cols = [pt.ones(grid_len), _ar1(pt.exp(-1.0 / tau_F), drive, exclude_current=True)]
-        if self.fatigue != "none":
-            cols.append(_ar1(pt.exp(-1.0 / tau_G), drive, exclude_current=True))
+        cols = [pt.ones(grid_len), self._base_integral(drive, tau_F, tau_F1)]
+        if self.core != "fitness-only":
+            cols.append(self._base_integral(drive, tau_G, tau_G1))
         ortho = pt.stack(cols, axis=1)
         return pm.Deterministic("R", stock), ortho
+
+    def _base_integral(self, drive: np.ndarray, tau: Any, tau_1: Any) -> Any:
+        r"""Gain-free integral $\sum_{s<t} w_s e^{-(t-s)/\tau(w_s)}$ for the AR(1) design.
+
+        Parameters
+        ----------
+        drive : np.ndarray
+            The daily training-load driver $w_t$ on the full grid.
+        tau : Any
+            Decay time constant $\tau$ in days (at zero load for ``ceddia``).
+        tau_1 : Any
+            Ceddia decay-time slope (days per unit load); unused for the other cores.
+
+        Returns
+        -------
+        Any
+            The gain-free integral, length ``T``.
+        """
+        if self.core == "ceddia":
+            return _leaky_varying(drive, tau + tau_1 * drive, drive)
+        return _ar1(pt.exp(-1.0 / tau), drive, exclude_current=True)
+
+    def _ceddia_params(self, drive: np.ndarray, tau_F: Any, tau_G: Any) -> tuple[Any, Any, Any]:
+        r"""Sample the Ceddia (2026) diminishing-returns exponent and decay-time slopes.
+
+        Samples $k_D$ and the dimensionless lengthening rates $\rho_F, \rho_G$ (with
+        $\rho_F = \rho_G + \lambda_\rho$ under ``informed``, independent under ``direct``), then
+        records the slopes $\tau_{F1}, \tau_{G1}$ (days per unit load) via
+        ``birm.core.reparam.decay_slope`` at the reference load $\bar w$, the mean
+        load over training days. The priors are informative and shrink toward Banister.
+
+        Parameters
+        ----------
+        drive : np.ndarray
+            The daily training-load driver $w_t$ on the full grid.
+        tau_F : Any
+            Zero-load fitness decay time constant $\tau_F$.
+        tau_G : Any
+            Zero-load fatigue decay time constant $\tau_G$.
+
+        Returns
+        -------
+        tuple[Any, Any, Any]
+            The ``(k_D, tau_F1, tau_G1)`` tensors.
+        """
+        positive = drive[drive > 0]
+        w_ref = float(positive.mean()) if positive.size else 1.0
+        k_D = _rv(self.priors, "k_D", "HalfNormal", sigma=_K_D_SIGMA)
+        rho_G = _rv(self.priors, "rho_G", "HalfNormal", sigma=_RHO_SIGMA)
+        if self.parameterization == "direct":
+            rho_F = _rv(self.priors, "rho_F", "HalfNormal", sigma=_RHO_SIGMA)
+        else:
+            lambda_rho = _rv(self.priors, "lambda_rho", "HalfNormal", sigma=_RHO_SIGMA)
+            rho_F = pm.Deterministic("rho_F", rho_G + lambda_rho)
+        tau_F1 = pm.Deterministic("tau_F1", decay_slope(tau_F, rho_F, w_ref))
+        tau_G1 = pm.Deterministic("tau_G1", decay_slope(tau_G, rho_G, w_ref))
+        return k_D, tau_F1, tau_G1
 
     def _stock_params_informed(self, scale: float) -> tuple[Any, Any, Any, Any, Any]:
         r"""Sample the identifiable reparameterized stock parameters.
 
         Samples $k_F$ and the non-negative margins ($\theta, \lambda_F, \lambda_G$), then derives
-        $k_G$, $\tau_F = 1 + \tau_G + \lambda_F$, and (Busso)
+        $k_G = (\theta + 1) k_F$, $\tau_F = 1 + \tau_G + \lambda_F$, and (Busso)
         $\tau_G = \tau_v + \lambda_G$ as ``Deterministic``s so the ordering
-        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty. The gain is
-        $k_G = (\theta + 1) k_F$ under ``informed`` and $k_G = (a_c + \theta) k_F$ under
-        ``admissible`` (flooring the ratio at the admissibility metric $a_c$).
+        $\tau_v < \tau_G < \tau_F$ and $k_G > k_F$ hold with certainty.
 
         Parameters
         ----------
@@ -380,12 +428,12 @@ class IRModel:
         Returns
         -------
         tuple[Any, Any, Any, Any, Any]
-            The ``(k_F, tau_F, k_G, tau_G, tau_v)`` tensors; ``k_G`` is ``0.0`` when
-            ``fatigue="none"`` and ``tau_v`` is ``None`` unless ``fatigue="busso"``.
+            The ``(k_F, tau_F, k_G, tau_G, tau_v)`` tensors; ``k_G`` is ``0.0`` for
+            ``core="fitness-only"`` and ``tau_v`` is ``None`` unless ``core="busso"``.
         """
         k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_F_FACTOR * scale)
         tau_v = None
-        if self.fatigue == "busso":
+        if self.core == "busso":
             tau_v = _rv(self.priors, "tau_v", "LogNormal", mu=np.log(_TAU_V[0]), sigma=_TAU_V[1])
             lambda_g = _rv(
                 self.priors, "lambda_g", "LogNormal", mu=np.log(_LAMBDA_G[0]), sigma=_LAMBDA_G[1]
@@ -399,12 +447,9 @@ class IRModel:
         tau_F = pm.Deterministic("tau_F", fitness_timescale(tau_G, lambda_f))
 
         k_G: Any = 0.0
-        if self.fatigue != "none":
+        if self.core != "fitness-only":
             theta = _rv(self.priors, "theta", "LogNormal", mu=np.log(_THETA[0]), sigma=_THETA[1])
-            if self.parameterization == "admissible":
-                k_G = pm.Deterministic("k_G", admissible_fatigue_gain(k_F, theta, tau_F, tau_G))
-            else:
-                k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
+            k_G = pm.Deterministic("k_G", fatigue_gain(k_F, theta))
         return k_F, tau_F, k_G, tau_G, tau_v
 
     def _stock_params_direct(self, scale: float) -> tuple[Any, Any, Any, Any, Any]:
@@ -424,7 +469,7 @@ class IRModel:
         -------
         tuple[Any, Any, Any, Any, Any]
             The ``(k_F, tau_F, k_G, tau_G, tau_v)`` tensors; ``k_G`` is ``0.0`` when
-            ``fatigue="none"`` and ``tau_v`` is ``None`` unless ``fatigue="busso"``.
+            ``core="fitness-only"`` and ``tau_v`` is ``None`` unless ``core="busso"``.
         """
         k_F = _rv(self.priors, "k_F", "HalfNormal", sigma=_K_DIRECT_FACTOR * scale)
         tau_F = _rv(
@@ -434,7 +479,7 @@ class IRModel:
             self.priors, "tau_G", "LogNormal", mu=np.log(_TAU_G_DIRECT[0]), sigma=_TAU_G_DIRECT[1]
         )
         tau_v = None
-        if self.fatigue == "busso":
+        if self.core == "busso":
             tau_v = _rv(
                 self.priors,
                 "tau_v",
@@ -443,7 +488,7 @@ class IRModel:
                 sigma=_TAU_V_DIRECT[1],
             )
         k_G: Any = 0.0
-        if self.fatigue != "none":
+        if self.core != "fitness-only":
             k_G = _rv(self.priors, "k_G", "HalfNormal", sigma=_K_DIRECT_FACTOR * scale)
         return k_F, tau_F, k_G, tau_G, tau_v
 

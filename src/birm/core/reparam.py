@@ -12,12 +12,11 @@ model off the singular ridge:
   timescale strictly fastest, giving the ordered $\tau_v < \tau_G < \tau_F$.
 - [fatigue_gain][] — $k_G = (\theta + 1) k_F$ floors the gain ratio above one, hard
   enforcing $k_G > k_F$ (Peng 2024).
-- [admissible_fatigue_gain][] — $k_G = (a_c + \theta) k_F$ floors the gain ratio at the
-  Ceddia (2026) admissibility metric $a_c$ instead of one, hard enforcing
-  $P(k_G/k_F > a_c) = 1$.
+- [decay_slope][] — $\tau_1 = \rho\,\tau / \bar w$ makes the Ceddia decay-time slopes
+  unit-free, so fitness outlasts fatigue at every load.
 
 These are pure arithmetic transforms of already-sampled parameters: the non-negative margins
-($\lambda_F, \lambda_G, \theta$) carry ``HalfNormal`` priors in the model layer, which is
+($\lambda_F, \lambda_G, \theta, \rho$) carry non-negative priors in the model layer, which is
 what makes the constraints hold with certainty. Each works on plain floats (for tests and
 diagnostics) or on PyTensor variables (inside the model graph).
 """
@@ -25,8 +24,6 @@ diagnostics) or on PyTensor variables (inside the model graph).
 from __future__ import annotations
 
 from typing import Any
-
-from birm.core.admissibility import admissibility_threshold
 
 
 def fitness_timescale(tau_G: Any, lambda_f: Any) -> Any:
@@ -83,29 +80,28 @@ def fatigue_gain(k_F: Any, theta: Any) -> Any:
     return (theta + 1.0) * k_F
 
 
-def admissible_fatigue_gain(k_F: Any, theta: Any, tau_F: Any, tau_G: Any) -> Any:
-    r"""Reparameterize the fatigue gain as $k_G = (a_c + \theta) k_F$.
+def decay_slope(tau: Any, rho: Any, w_ref: float) -> Any:
+    r"""Reparameterize a Ceddia decay-time slope as $\tau_1 = \rho\,\tau / \bar w$.
 
-    Identical in structure to [fatigue_gain][], but floors the gain ratio at the Ceddia (2026)
-    admissibility metric $a_c = \frac{1 - e^{-1/\tau_G}}{e^{1/\tau_F} - 1}$ rather than at one.
-    With a non-negative margin $\theta$ this enforces $k_G / k_F = a_c + \theta \ge a_c$, so the
-    posterior probability of admissibility $P(k_G / k_F > a_c) = 1$. The fitness timescale keeps
-    the same $\tau_F = 1 + \tau_G + \lambda_F$ reparameterization.
+    The slope $\tau_1$ (days per unit load) in $\tau(w) = \tau + \tau_1 w$ depends on the load
+    units. Sampling the dimensionless $\rho \ge 0$ instead makes the prior unit-free:
+    $\tau(\bar w) = (1 + \rho)\,\tau$, so $\rho$ is the fractional lengthening of the decay time
+    after a session of typical load $\bar w$. With $\rho_F = \rho_G + \lambda_\rho$ and
+    $\tau_F > \tau_G$ this also gives $\tau_{F1} \ge \tau_{G1}$, so
+    $\tau_F(w) > \tau_G(w)$ at every load.
 
     Parameters
     ----------
-    k_F : Any
-        Fitness gain $k_F$ (float or scalar tensor).
-    theta : Any
-        Non-negative gain-ratio margin $\theta$; $k_G / k_F = a_c + \theta$.
-    tau_F : Any
-        Fitness decay time constant $\tau_F$ in days (float or scalar tensor).
-    tau_G : Any
-        Fatigue decay time constant $\tau_G$ in days (float or scalar tensor).
+    tau : Any
+        Zero-load decay time constant $\tau$ in days (float or scalar tensor).
+    rho : Any
+        Non-negative fractional lengthening $\rho$ at the reference load.
+    w_ref : float
+        Reference (typical training-day) load $\bar w > 0$.
 
     Returns
     -------
     Any
-        The fatigue gain $k_G$, of the same kind as the inputs.
+        The slope $\tau_1$ in days per unit load, of the same kind as the inputs.
     """
-    return (admissibility_threshold(tau_F, tau_G) + theta) * k_F
+    return rho * tau / w_ref
