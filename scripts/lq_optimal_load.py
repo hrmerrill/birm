@@ -57,7 +57,9 @@ def _ci(x: np.ndarray) -> tuple[float, float, float]:
     return float(np.mean(x)), float(np.percentile(x, 2.5)), float(np.percentile(x, 97.5))
 
 
-def _lq_plan(a_F: float, a_G: float, k_F: float, k_G: float) -> tuple[np.ndarray, ...] | None:
+def _lq_plan(
+    a_F: float, a_G: float, k_F: float, k_G: float, horizon: int = HORIZON
+) -> tuple[np.ndarray, ...] | None:
     """Solve the step-tracking LQ regulator for one draw and roll out the closed loop.
 
     Parameters
@@ -66,6 +68,8 @@ def _lq_plan(a_F: float, a_G: float, k_F: float, k_G: float) -> tuple[np.ndarray
         Fitness/fatigue decay coefficients ``exp(-1/tau)``.
     k_F, k_G : float
         Fitness/fatigue gains.
+    horizon : int, default HORIZON
+        Days to roll out the closed loop.
 
     Returns
     -------
@@ -92,9 +96,9 @@ def _lq_plan(a_F: float, a_G: float, k_F: float, k_G: float) -> tuple[np.ndarray
     v = TARGET / dc  # feedforward so steady-state output hits the target
 
     x = np.zeros((2, 1))
-    u = np.empty(HORIZON)
-    traj = np.empty((HORIZON, 2))
-    for t in range(HORIZON):
+    u = np.empty(horizon)
+    traj = np.empty((horizon, 2))
+    for t in range(horizon):
         u_t = (-F @ x).item() + v
         u[t] = u_t
         x = A_cl @ x + B * v
@@ -103,7 +107,7 @@ def _lq_plan(a_F: float, a_G: float, k_F: float, k_G: float) -> tuple[np.ndarray
     return u, traj[:, 0], traj[:, 1], R
 
 
-def main(examples: int = 0) -> None:
+def main(examples: int = 0, nc: Path = NC, fig: Path = FIG, horizon: int = HORIZON) -> None:
     """Run the posterior LQ sweep, print cost CIs, and render the plan figure.
 
     Parameters
@@ -111,8 +115,15 @@ def main(examples: int = 0) -> None:
     examples : int, default 0
         Number of representative posterior draws to overlay as individual ``w`` schedules
         and their IR trajectories. ``0`` shows only the 95% bands and medians.
+    nc : Path, default NC
+        Cached posterior to plan from. A ``fitness-only`` fit (no ``k_G``) runs with ``k_G = 0``,
+        so the fatigue state is never driven and the system reduces to fitness alone.
+    fig : Path, default FIG
+        Output figure path.
+    horizon : int, default HORIZON
+        Days to simulate; the slower fitness-only system needs longer to reach the target.
     """
-    post = az.from_netcdf(NC).posterior
+    post = az.from_netcdf(nc).posterior
 
     # HRV scale (ms); the IR terms f, g, r read into HRV with unit gain, so multiplying by this
     # back-transforms the standardized stocks to raw HRV milliseconds.
@@ -133,12 +144,13 @@ def main(examples: int = 0) -> None:
 
     a_F = np.exp(-1.0 / flat("tau_F"))
     a_G = np.exp(-1.0 / flat("tau_G"))
-    k_F, k_G = flat("k_F"), flat("k_G")
+    k_F = flat("k_F")
+    k_G = flat("k_G") if "k_G" in post else np.zeros_like(k_F)
     n = a_F.shape[0]
 
     U, Ff, Gg, Rr = [], [], [], []
     for i in range(n):
-        out = _lq_plan(float(a_F[i]), float(a_G[i]), float(k_F[i]), float(k_G[i]))
+        out = _lq_plan(float(a_F[i]), float(a_G[i]), float(k_F[i]), float(k_G[i]), horizon)
         if out is None:
             continue
         U.append(out[0])
@@ -178,12 +190,12 @@ def main(examples: int = 0) -> None:
         print(f"{label:24s} {m:8.3f} ({lo:7.3f}, {hi:7.3f})")
 
     # --- figure: optimal load schedule (top) + fitness/fatigue cost (bottom) -----
-    days = np.arange(HORIZON)
+    days = np.arange(horizon)
     lo_u, mid_u, hi_u = np.percentile(U, [2.5, 50, 97.5], axis=0)
     lo_f, mid_f, hi_f = np.percentile(Ff, [2.5, 50, 97.5], axis=0)
     lo_g, mid_g, hi_g = np.percentile(Gg, [2.5, 50, 97.5], axis=0)
 
-    fig, (ax_u, ax_fg) = plt.subplots(2, 1, sharex=True, figsize=_figstyle.size(7.0, 4.6))
+    figure, (ax_u, ax_fg) = plt.subplots(2, 1, sharex=True, figsize=_figstyle.size(7.0, 4.6))
 
     ax_u.fill_between(days, lo_u, hi_u, color="0.6", alpha=0.35, linewidth=0, zorder=2)
     ax_u.plot(days, mid_u, color="black", linewidth=1.2, zorder=3)
@@ -209,9 +221,9 @@ def main(examples: int = 0) -> None:
     ax_fg.legend(frameon=False, loc="upper left")
     ax_fg.spines[["top", "right"]].set_visible(False)
 
-    fig.tight_layout()
-    fig.savefig(FIG, dpi=600, format="jpg")
-    print(f"\nsaved figure -> {FIG}")
+    figure.tight_layout()
+    figure.savefig(fig, dpi=600, format="jpg")
+    print(f"\nsaved figure -> {fig}")
 
 
 if __name__ == "__main__":
@@ -222,4 +234,7 @@ if __name__ == "__main__":
         default=0,
         help="number of representative posterior draws to overlay (default 0: bands + means only)",
     )
+    parser.add_argument("--nc", type=Path, default=NC, help="cached posterior (.nc)")
+    parser.add_argument("--fig", type=Path, default=FIG, help="output figure path")
+    parser.add_argument("--horizon", type=int, default=HORIZON, help="days to simulate")
     main(**vars(parser.parse_args()))
